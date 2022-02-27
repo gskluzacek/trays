@@ -1036,7 +1036,7 @@ class Base:
             # as the next point in the length calculation
             prev_dim_pt = curr_dim_pt
             curr_dim_pt = next_dim_pt
-            path_cmds.append("\n\n")
+            # path_cmds.append("\n\n")
 
         svg_path = " ".join(path_cmds)
         print(svg_path)
