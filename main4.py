@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from itertools import count
 from typing import List, Tuple, Dict, Optional
 
@@ -316,14 +318,26 @@ class DimPoint:
         else:
             raise ValueError(f"Invalid dim name: {dim}")
 
-    def dire(self):
+    def dire(self) -> str:
         return self.direction
 
-    def next_dim_pt(self):
+    def next_dim_pt(self) -> DimPoint:
         return self.next
 
-    def prev_dim_pt(self):
+    def prev_dim_pt(self) -> DimPoint:
         return self.prev
+
+    def get_next_start(self) -> DimPoint:
+        temp = self.next_dim_pt()
+        while temp.dire() == self.dire():
+            temp = temp.next_dim_pt()
+        return temp
+
+    def get_prev_end(self) -> DimPoint:
+        temp = self.prev_dim_pt()
+        while temp.dire() == self.dire():
+            temp = temp.prev_dim_pt()
+        return temp
 
 
 class DimPath:
@@ -876,6 +890,40 @@ class Base:
 
         return nbr_of_fngrs, nbr_of_spcs, be_len
 
+    def normalize_paths(self):
+        print("=" * 100)
+        print(f"\tfinger length:         {self.fngr_len}")
+        print(f"\tspace length:          {self.spc_len}")
+        print(f"\tmaterial thickness:    {self.mat_thick}")
+        print(f"\tminimum beg / end len: {self.min_be_len}")
+
+        for dim_path in self.dim_paths:
+            print("-" * 100)
+            print(f"\tpath orientation: {dim_path.path_ori}")
+            print("-" * 100)
+
+            starting_point = None
+
+            temp_point = dim_path.path_points[0].get_prev_end()
+            prev_point = temp_point.get_prev_end().next_dim_pt()
+            curr_point = temp_point.next_dim_pt()
+
+            norm_path = []
+            while curr_point != starting_point:
+                if not starting_point:
+                    starting_point = curr_point
+
+                next_point = curr_point.get_next_start()
+                norm_path.append(curr_point)
+                print(prev_point.id, curr_point.id, next_point.id)
+
+                prev_point = curr_point
+                curr_point = next_point
+
+            for point in norm_path:
+                print(point)
+
+
     def gen_svg_path(self, i: int = 0):
         # TODO: we probably need different logic for base parts versus side walls parts
         # TODO: add logic to handle different kinds of line types (fingered / smooth)
@@ -901,25 +949,36 @@ class Base:
         # outer while loop when the current pointer wraps back around to the started point
         started = None
 
-        # set the current point to the first point on the path
-        curr_dim_pt = dim_path.path_points[0]
+        temp_dim_pt = dim_path.path_points[0]
+        curr_dim_pt = temp_dim_pt.get_next_start()
+        prev_dim_pt = temp_dim_pt.get_prev_end().next_dim_pt()
 
-        # for the use case if the first point of the path falls in the middle of
-        # a multi-line collinear line, we need to
-        # get the last point that corresponds to the end of the current collinear line
-        prev_dim_pt: DimPoint = curr_dim_pt.prev_dim_pt()
-        while prev_dim_pt.dire() == curr_dim_pt.dire():
-            curr_dim_pt = curr_dim_pt.next_dim_pt()
-
-        # for the same use case as above, now go backwards and get the first point that
-        # corresponds to the current collinear line
-        temp_prev_dim_pt: DimPoint = prev_dim_pt
-        while temp_prev_dim_pt.dire() == prev_dim_pt.dire():
-            temp_prev_dim_pt = temp_prev_dim_pt.prev_dim_pt()
-        prev_dim_pt = temp_prev_dim_pt.next_dim_pt()
-
-        # initialize the next point to the first point after the current point
-        next_dim_pt: DimPoint = curr_dim_pt.next_dim_pt()
+        # # set the current point to the first point on the path
+        # curr_dim_pt = dim_path.path_points[0]
+        #
+        # # for the use case if the first point of the path falls in the middle of
+        # # a multi-line collinear line, we need to
+        # # get the last point that corresponds to the end of the current collinear line
+        # prev_dim_pt: DimPoint = curr_dim_pt.prev_dim_pt()
+        # while prev_dim_pt.dire() == curr_dim_pt.dire():
+        #     print("loop", prev_dim_pt.id, prev_dim_pt.direction, curr_dim_pt.id, curr_dim_pt.direction)
+        #     curr_dim_pt = curr_dim_pt.next_dim_pt()
+        # print("finl", prev_dim_pt.id, prev_dim_pt.direction, curr_dim_pt.id, curr_dim_pt.direction)
+        # print("-" * 100)
+        #
+        # # for the same use case as above, now go backwards and get the first point that
+        # # corresponds to the current collinear line
+        # temp_prev_dim_pt: DimPoint = prev_dim_pt.prev_dim_pt()
+        # while temp_prev_dim_pt.dire() == prev_dim_pt.dire():
+        #     print("loop", temp_prev_dim_pt.id, temp_prev_dim_pt.direction, prev_dim_pt.id, prev_dim_pt.direction)
+        #     temp_prev_dim_pt = temp_prev_dim_pt.prev_dim_pt()
+        # print("temp", temp_prev_dim_pt.id, temp_prev_dim_pt.direction, prev_dim_pt.id, prev_dim_pt.direction)
+        # prev_dim_pt = temp_prev_dim_pt.next_dim_pt()
+        # print("final", temp_prev_dim_pt.id, temp_prev_dim_pt.direction, prev_dim_pt.id, prev_dim_pt.direction)
+        # print("-" * 100)
+        #
+        # # initialize the next point to the first point after the current point
+        # next_dim_pt: DimPoint = curr_dim_pt.next_dim_pt()
 
         path_cmds = []
         inside_point = curr_dim_pt.get("inside")
@@ -933,12 +992,14 @@ class Base:
             ctr += 1
             if not started:
                 started = curr_dim_pt
+                print(started.id)
 
             # we keep advancing next point until the next point's direction is different than the current point's
             # direction. This will consolidate multiple collinear lines into a single line
             # TODO: modify the loop condition to include line type as well as the direction
-            while next_dim_pt.dire() == curr_dim_pt.dire():
-                next_dim_pt = next_dim_pt.next_dim_pt()
+            # while next_dim_pt.dire() == curr_dim_pt.dire():
+            #     next_dim_pt = next_dim_pt.next_dim_pt()
+            next_dim_pt = curr_dim_pt.get_next_start()
 
             # begin processing of the current line(curr_dim_pt, next_dim_point)
             curr_corner_side = curr_dim_pt.corner_side
@@ -1131,8 +1192,8 @@ def main():
     # add the polygon for the use case
     #
 
-    # Test.super_all_collinear_poly(base)
-    Test.complex_poly(base)
+    Test.super_all_collinear_poly(base)
+    # Test.complex_poly(base)
     # Test.simple_ccw(base)
     # Test.simple_cw(base)
     # two_path(base)
@@ -1150,7 +1211,11 @@ def main():
 
     base.calc_dim_paths()
     # base.create_path_walls()
+
+    # base.normalize_paths()
+
     base.gen_svg_path()
+
     # svg_path = base.gen_svg_path_raw(0)
     # print(svg_path)
     # svg_path = base.gen_svg_path_raw(0, "inside")
