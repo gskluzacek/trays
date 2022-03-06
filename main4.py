@@ -3,6 +3,8 @@ from __future__ import annotations
 from itertools import count
 from typing import List, Tuple, Dict, Optional
 
+from cyclic_n_tuples import cyclic_n_tuples
+
 
 class Point:
     """
@@ -130,19 +132,12 @@ class Line:
             # the line is going up if the y_delta (rise) is positive ( > 0 )
             #   else the line is going down if the y_delta (rise) in negative ( < 0 )
             #   the rise can never be 0 if the run is 0
-            if y_delta > 0:
-                return "down"
-            else:
-                return "up"
-        # use case y_delta (rise) is 0 and x_delta (run) is non-zero
+            return "down" if y_delta > 0 else "up"
         else:
             # the line is going left if the x_delta (run) is positive ( > 0 )
             #   else the line is going down if the x_delta (run) in negative ( < 0 )
             #   the run can never be 0 if the rise is 0
-            if x_delta > 0:
-                return "right"
-            else:
-                return "left"
+            return "right" if x_delta > 0 else "left"
 
 
 class Path:
@@ -209,16 +204,20 @@ class DimPoint:
         outside_pt: Point,
         on_center_pt: Point,
         inside_pt: Point,
+        index_pt: IndexPoint,
+        copy_id: int = None,
     ):
-        self.direction = direction
-        self.line_type = line_type
-        self.corner_side = None
-        self.outside_pt = outside_pt
-        self.on_center_pt = on_center_pt
-        self.inside_pt = inside_pt
-        self.id = next(self.seq)
-        self.prev = None
-        self.next = None
+        self.direction: str = direction
+        self.line_type: str = line_type
+        self.corner_side: Optional[str] = None
+        self.outside_pt: Point = outside_pt
+        self.on_center_pt: Point = on_center_pt
+        self.inside_pt: Point = inside_pt
+        self.index_point: IndexPoint = index_pt
+        self.id: int = next(self.seq)
+        self.copy_id = copy_id
+        self.prev: Optional[DimPoint] = None
+        self.next: Optional[DimPoint] = None
 
     def __str__(self):
         return f"[{self.direction} {self.line_type} {self.outside_pt} {self.on_center_pt} {self.inside_pt}]"
@@ -431,7 +430,9 @@ class DimPath:
         outside_pt: Point,
         on_center_pt: Point,
         inside_pt: Point,
-    ) -> None:
+        index_point: IndexPoint,
+        copy_id: int = None,
+    ) -> DimPoint:
         """
         Create and add a new DimPoint to the DimPath.
 
@@ -440,6 +441,7 @@ class DimPath:
         :param outside_pt:      the xy Point object for the outside point
         :param on_center_pt:    the xy Point object for the on-center point
         :param inside_pt:       the xy Point object for the inside point
+        :param index_point:     the index_point used to generate the dim point
         :return:                Nothing
 
         if the point being added, is the 2nd or more point, then
@@ -448,7 +450,7 @@ class DimPath:
             - additionally, the current points previous point is set and the previous points next point is set.
         """
         # create the new point
-        new_point = DimPoint(direction, line_type, outside_pt, on_center_pt, inside_pt)
+        new_point = DimPoint(direction, line_type, outside_pt, on_center_pt, inside_pt, index_point, copy_id)
 
         # if there is at least one other point in the list
         if self.path_points:
@@ -463,6 +465,7 @@ class DimPath:
             new_point.prev = prev_point
         # add the new point to the path
         self.path_points.append(new_point)
+        return new_point
 
     def set_wrap(self) -> None:
         """
@@ -581,10 +584,11 @@ class IndexPoint:
     a polygon's path using simple column and row integer indices instead of actual decimal x, y coordinates.
     """
 
-    def __init__(self, x_index: int, y_index: int, line_type: Optional[str] = None):
+    def __init__(self, x_index: int, y_index: int, line_type: Optional[str] = None, dim_pt: DimPoint = None):
         self.line_type = line_type
         self.x_index = x_index
         self.y_index = y_index
+        self.dim_point: Optional[DimPoint] = dim_pt
 
     def __str__(self) -> str:
         return f"[{self.x_index}, {self.y_index}]"
@@ -592,11 +596,15 @@ class IndexPoint:
     def __repr__(self) -> str:
         return str(self)
 
+    @property
+    def gxy(self) -> Tuple[int, int]:
+        return self.x_index, self.y_index
+
 
 class IndexPath:
-    def __init__(self, start_point: IndexPoint):
-        self.orientation = None
-        self.index_points: List[IndexPoint] = [start_point]
+    def __init__(self, start_point: IndexPoint = None, orientation: str = None):
+        self.orientation = orientation
+        self.index_points: List[IndexPoint] = [start_point] if start_point else []
 
     def add_point(self, point: IndexPoint) -> None:
         self.index_points.append(point)
@@ -656,6 +664,7 @@ class Base:
         self.index_paths: List[IndexPath] = []
         self.dim_paths: List[DimPath] = []
 
+        self.norm_index_paths: List[IndexPath] = []
         self.norm_dim_paths: List[DimPath] = []
 
         self.index_walls: List[IndexWall] = []
@@ -819,13 +828,15 @@ class Base:
                 outside_dim, inside_dim = self.get_dims_from_agg_points(
                     curr_i_point, outside_pt_nbr, inside_pt_nbr
                 )
-                dim_path.add(
+                new_dim_point = dim_path.add(
                     direction=curr_dire,
                     line_type=curr_i_point.line_type,
                     outside_pt=outside_dim,
                     on_center_pt=curr_pt,
                     inside_pt=inside_dim,
+                    index_point=curr_i_point,
                 )
+                curr_i_point.dim_point = new_dim_point
             dim_path.set_wrap()
             self.dim_paths.append(dim_path)
 
@@ -846,7 +857,7 @@ class Base:
             )
 
         path_ori = None
-        for i in range(0, len(i_path.index_points) - 2):
+        for i in range(len(i_path.index_points) - 2):
             i_pt_1 = i_path.index_points[i]
             pt_1 = self.get_avg_agg_point(i_pt_1)
             i_pt_2 = i_path.index_points[i + 1]
@@ -896,23 +907,35 @@ class Base:
     def normalize_paths(self):
         for dim_path in self.dim_paths:
             starting_point = None
-            curr_point = dim_path.path_points[0].get_prev_end().next_dim_pt()
+            norm_index_path = IndexPath(orientation=dim_path.path_ori)
             norm_dim_path = DimPath(dim_path.path_ori)
+            curr_point = dim_path.path_points[0].get_prev_end().next_dim_pt()
 
             while curr_point != starting_point:
                 if not starting_point:
                     starting_point = curr_point
 
-                norm_dim_path.add(
+                dim_pt = norm_dim_path.add(
                     direction=curr_point.direction,
                     line_type=curr_point.line_type,
                     outside_pt=curr_point.outside_pt,
                     on_center_pt=curr_point.on_center_pt,
-                    inside_pt=curr_point.inside_pt
+                    inside_pt=curr_point.inside_pt,
+                    index_point=curr_point.index_point,
+                    copy_id=curr_point.id
                 )
+                curr_i_pt = curr_point.index_point
+                index_pt = IndexPoint(
+                    x_index=curr_i_pt.x_index,
+                    y_index=curr_i_pt.y_index,
+                    line_type=curr_i_pt.line_type,
+                    dim_pt=dim_pt,
+                )
+                norm_index_path.add_point(index_pt)
                 curr_point = curr_point.get_next_start()
 
             norm_dim_path.set_wrap()
+            self.norm_index_paths.append(norm_index_path)
             self.norm_dim_paths.append(norm_dim_path)
 
             # TODO: link between the dim_point and the index_point
@@ -926,48 +949,47 @@ class Base:
         # TODO: analysis of consecutive collinear lines with the same type
         #   do we group them together into 1 line
 
-        print("=" * 100)
-        print(f"\tfinger length:         {self.fngr_len}")
-        print(f"\tspace length:          {self.spc_len}")
-        print(f"\tmaterial thickness:    {self.mat_thick}")
-        print(f"\tminimum beg / end len: {self.min_be_len}")
+        # print("=" * 100)
+        # print(f"\tfinger length:         {self.fngr_len}")
+        # print(f"\tspace length:          {self.spc_len}")
+        # print(f"\tmaterial thickness:    {self.mat_thick}")
+        # print(f"\tminimum beg / end len: {self.min_be_len}")
 
         # TODO: make this loop over all dim_paths
-        dim_path = self.norm_dim_paths[i]
-        print("-" * 100)
-        print(f"\tpath orientation: {dim_path.path_ori}")
-        print("-" * 100)
+        norm_dim_path = self.norm_dim_paths[i]
+        # print("-" * 100)
+        # print(f"\tpath orientation: {norm_dim_path.path_ori}")
+        # print("-" * 100)
 
-        curr_dim_pt = dim_path.path_points[0]
+        curr_dim_pt = norm_dim_path.path_points[0]
 
-        path_cmds = []
         inside_point = curr_dim_pt.get("inside")
         # PATH CMD: MOVE TO 1st point on the path
         # TODO: will we need special logic to determine inside/outside corner & adjust x,y values?
-        path_cmds.append(f"M {inside_point.x} {inside_point.y}")
+        path_cmds = [f"M {inside_point.x} {inside_point.y}"]
 
-        for ctr, curr_dim_pt in enumerate(dim_path.path_points, 1):
+        for ctr, curr_dim_pt in enumerate(norm_dim_path.path_points, 1):
             next_dim_pt = curr_dim_pt.get_next_start()
 
             # begin processing of the current line(curr_dim_pt, next_dim_point)
             curr_corner_side = curr_dim_pt.corner_side
             next_corner_side = next_dim_pt.corner_side
 
-            print(
-                f"*** [{ctr}] processing ***\n"
-                f"\tCURR: #{curr_dim_pt.id} {curr_dim_pt.get('outside')} {curr_dim_pt.dire()} >>> {curr_corner_side} <<<\n"
-                f"\tinside: {curr_dim_pt.get('inside')}\n"
-                f"\tNEXT: #{next_dim_pt.id} {next_dim_pt.get('outside')} {next_dim_pt.dire()} >>> {next_corner_side} <<<\n"
-                f"\tinside: {next_dim_pt.get('inside')}"
-            )
+            # print(
+            #     f"*** [{ctr}] processing ***\n"
+            #     f"\tCURR: #{curr_dim_pt.id} {curr_dim_pt.get('outside')} {curr_dim_pt.dire()} >>> {curr_corner_side} <<<\n"
+            #     f"\tinside: {curr_dim_pt.get('inside')}\n"
+            #     f"\tNEXT: #{next_dim_pt.id} {next_dim_pt.get('outside')} {next_dim_pt.dire()} >>> {next_corner_side} <<<\n"
+            #     f"\tinside: {next_dim_pt.get('inside')}"
+            # )
 
             o_len = curr_dim_pt.outer_line_length(next_dim_pt)
             nbr_of_fngrs, nbr_of_spcs, be_len = self.calc_min(tot_len=o_len)
 
-            print(
-                f"\tlength: {o_len}, number of fingers: {nbr_of_fngrs}, "
-                f"number of spaces: {nbr_of_spcs}, beg / end length: {be_len}"
-            )
+            # print(
+            #     f"\tlength: {o_len}, number of fingers: {nbr_of_fngrs}, "
+            #     f"number of spaces: {nbr_of_spcs}, beg / end length: {be_len}"
+            # )
 
             if curr_dim_pt.dire() == "right":
                 dir_coord = curr_dim_pt.get("inside").x
@@ -1010,7 +1032,7 @@ class Base:
             path_cmds.append(f"{dir1} {dir_coord}")
 
             # create PATH for N number of FINGER-SPACE pairs
-            for i in range(nbr_of_spcs):
+            for _ in range(nbr_of_spcs):
                 # PATH CMD: go-to finger point outside
                 path_cmds.append(f"{dir2} {fp1_coord}")
                 # PATH CMD: go to the dir_cord adjusted for the finger length
@@ -1048,12 +1070,10 @@ class Base:
     def gen_svg_path_raw(self, i: int = 0, dim: str = "outside"):
         dim_path = self.dim_paths[i]
 
-        svg_path_list = []
-
         # the first point on the path is used for the Move To command
         move_to_dim = dim_path.path_points[0]
         point = move_to_dim.get(dim)
-        svg_path_list.append(f"M {point.x} {point.y}")
+        svg_path_list = [f"M {point.x} {point.y}"]
 
         # the direction of the first point is used to determine if a horizontal line
         #   or a vertical line should be drawn when consuming the second point
@@ -1070,8 +1090,7 @@ class Base:
             prev_dire = dim_point.direction
 
         svg_path_list.append("Z")
-        svg_path = " ".join(svg_path_list)
-        return svg_path
+        return " ".join(svg_path_list)
 
     def start_path(self, x_index: int, y_index: int, line_type: str = "finger"):
         point = IndexPoint(x_index, y_index, line_type)
@@ -1118,8 +1137,18 @@ class Base:
         return cls.direction_dims[ori][dire1][dire2]
 
     def create_path_walls(self):
-        for _ in self.index_paths:
-            pass
+        print("+"*100)
+        for norm_index_path in self.norm_index_paths:
+            pts_len = len(norm_index_path.index_points)
+            for i in range(pts_len):
+                curr_pt = norm_index_path.index_points[i]
+                next_pt = norm_index_path.index_points[(i+1)%pts_len]
+                print(
+                    f"[{curr_pt.dim_point.copy_id}] {curr_pt.gxy} | "
+                    f"[{next_pt.dim_point.copy_id}] {next_pt.gxy}"
+                )
+                self.add_wall(curr_pt.gxy, next_pt.gxy, "finger")
+        print("+"*100)
 
 
 def main():
@@ -1153,7 +1182,7 @@ def main():
 
     base.calc_dim_paths()
     base.normalize_paths()
-    # base.create_path_walls()
+    base.create_path_walls()
 
 
     # base.gen_svg_path()
@@ -1167,7 +1196,7 @@ def main():
     # print(svg_path)
     # svg_path = base.gen_svg_path(1)
     # print(svg_path)
-
+    print("\n\nDONE")
 
 class Test:
     @staticmethod
