@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from operator import attrgetter
 from itertools import count
 from typing import List, Tuple, Dict, Optional
 
-from cyclic_n_tuples import cyclic_n_tuples
+from cyclic_n_tuples import cyclic_n_tuples, pair_wind
 
 
 class Point:
@@ -20,6 +21,9 @@ class Point:
 
     def __str__(self) -> str:
         return f"({str(self.x).zfill(4)}, {str(self.y).zfill(4)})"
+
+    def __repr__(self):
+        return str(self)
 
     def orientation(self, p2, p3) -> str:
         """
@@ -442,6 +446,8 @@ class DimPath:
         :param on_center_pt:    the xy Point object for the on-center point
         :param inside_pt:       the xy Point object for the inside point
         :param index_point:     the index_point used to generate the dim point
+        :param copy_id:         if we are adding a point that came from another point, we use the copy_id to track the
+                                original point
         :return:                Nothing
 
         if the point being added, is the 2nd or more point, then
@@ -616,6 +622,120 @@ class IndexWall:
         self.end_pt = end_pt
         self.wall_type = wall_type
 
+    def __str__(self):
+        return f"{self.start_pt} {self.end_pt} | {self.start_pt.dim_point} {self.end_pt.dim_point}"
+
+
+class DimWall:
+    def __init__(self):
+        # not sure if we need something like this yet
+        pass
+
+
+class BaseSlot:
+    def __init__(self, bslot_type):
+        self.type: str = bslot_type     # horz or vert
+        self._intersections: List[Point] = []
+
+    @property
+    def intersections(self):
+        self._sort()
+        return self._intersections
+
+    def add(self, intersection: Point):
+        self._intersections.append(intersection)
+
+    def _sort(self):
+        self._intersections.sort(key=attrgetter('x', 'y'))
+
+
+class Wall:
+    seq = count(1)
+    def __init__(self, pt_1: Point, pt_2: Point, w_type=None):
+        """
+        Define a Wall Object.
+
+        :param pt_1:        Point object defining the beginning of the wall
+        :param pt_2:        Point object defining the ending of the wall
+        :param w_type:      type of wall: finger joint, tab slot
+
+        other attributes:
+        - super_direction:  vertical or horizontal
+        - inter_wall_list:  list of IntersectionToWall objects that the wall contains
+
+        the method will determine the super direction by comparing the 2 x coordinates
+            and the 2 y coordinates.
+        additionally, the method will ensure that the pt_1 attribute contains the Point
+            object that has the smaller x coordinate if it is a horizontal wall or
+            the smaller y coordinate if it is a vertical wall. Swapping pt_1 and pt_2
+            if necessary.
+        """
+        self.id = next(self.seq)
+        self.type = w_type
+        t1, t2 = pt_1, pt_2
+        # check if the line is horizontal or vertical. If both x coords are equal then vertical
+        if pt_1.x == pt_2.x:
+            spr_dir = "vert"
+            # make sure pt_1 is the point with the smaller y coordinate
+            if pt_1.y > pt_2.y:
+                pt_2, pt_1 = pt_1, pt_2
+        # else if both y coords are equal then horizontal
+        elif pt_1.y == pt_2.y:
+            spr_dir = "horz"
+            # make sure pt_1 is the point with the smaller x coordinate
+            if pt_1.x > pt_2.x:
+                pt_2, pt_1 = pt_1, pt_2
+        else:
+            raise ValueError(
+                f"the line must be horizontal or vertical - given points ({t1.x}, {t1.y}) and ({t2.x}, {t2.y})."
+            )
+        self.super_direction = spr_dir
+        self.pt_1 = pt_1
+        self.pt_2 = pt_2
+        self.inter_walL_list = []
+
+    def __str__(self):
+        return f"WALL #{self.id} - pt1: {self.pt_1} pt2: {self.pt_2} : {self.super_direction}"
+
+    def intersect(self, other: Wall) -> Tuple[Optional[str], Optional[str], Optional[Point]]:
+        """
+        Determine the intersection type if a given vertical wall intersects with a given horizontal wall.
+
+        :param other:   the vertical wall
+        :return:        the type of intersection: corner, cross, tee or None if the 2 walls do not intersect
+
+        self is the horizontal wall.
+        """
+        horz = self
+        horz_y = horz.pt_1.y
+        vert = other
+        vert_x = vert.pt_1.x
+        intersection_point = Point(vert_x, horz_y)
+        # cross intersection
+        if vert.pt_1.y < horz_y < vert.pt_2.y and horz.pt_1.x < vert_x < horz.pt_2.x:
+            return "cross", None, intersection_point
+        # corner intersection
+        elif horz.pt_1.x == vert.pt_1.x and horz.pt_1.y == vert.pt_1.y:
+            return "corner", "upper-left", intersection_point
+        elif horz.pt_1.x == vert.pt_2.x and horz.pt_1.y == vert.pt_2.y:
+            return "corner", "lower-left", intersection_point
+        elif horz.pt_2.x == vert.pt_1.x and horz.pt_2.y == vert.pt_1.y:
+            return "corner", "upper-right", intersection_point
+        elif horz.pt_2.x == vert.pt_2.x and horz.pt_2.y == vert.pt_2.y:
+            return "corner", "lower-right", intersection_point
+        # tee intersection
+        elif vert.pt_1.y == horz_y and horz.pt_1.x < vert_x < horz.pt_2.x:
+            return "tee", "top", intersection_point
+        elif vert.pt_2.y == horz_y and horz.pt_1.x < vert_x < horz.pt_2.x:
+            return "tee", "bottom", intersection_point
+        elif horz.pt_1.x == vert_x and vert.pt_1.y < horz_y < vert.pt_2.y:
+            return "tee", "left", intersection_point
+        elif horz.pt_2.x == vert_x and vert.pt_1.y < horz_y < vert.pt_2.y:
+            return "tee", "right", intersection_point
+        # walls do not intersect
+        else:
+            return None, None, None
+
 
 class Base:
     """
@@ -647,6 +767,9 @@ class Base:
         min_be_len: float,
         col_widths: List[float],
         row_heights: List[float],
+        max_tbslt_bt_xs: int,
+        min_tbslt_len: int,
+        wall_tbslt_dist: float,
         depth: float,
     ):
         """
@@ -661,6 +784,10 @@ class Base:
         :param row_heights:     list of row heights to use to calculate the base dimensions (aggregate points)
         :param depth:           how high the walls are...
         """
+        self.max_tbslt_bt_xs = max_tbslt_bt_xs
+        self.min_tbslt_len = min_tbslt_len
+        self.wall_tbslt_dist = wall_tbslt_dist
+
         self.index_paths: List[IndexPath] = []
         self.dim_paths: List[DimPath] = []
 
@@ -668,6 +795,7 @@ class Base:
         self.norm_dim_paths: List[DimPath] = []
 
         self.index_walls: List[IndexWall] = []
+        self.base_slots: List[BaseSlot] = []
 
         self.mat_thick = mat_thick
         self.fngr_len = fngr_len
@@ -734,37 +862,29 @@ class Base:
         #   total_mat_thickness = (nbr_of_cols + 1) * mat_thick
         #   total_inside_dim_cols_widths = total_of_all_columns - total_mat_thickness
         #   ratio = total_inside_dim_cols_widths / total_of_all_columns
-
         col_ratio = (self.width - ((self.nbr_cols + 1) * self.mat_thick)) / self.width
-        # print(f"col ratio: {col_ratio}")
 
         # calc adjusted columns (i.e., inside dim width)
         col_id_widths = [col * col_ratio for col in self.col_widths]
-        # print(f"adj col widths:\n{col_id_widths}")
 
         # calc the column offsets by accumulating
         #   the adj col widths
         #   plus the mat_thickness
-
-        # initial col position
-        col_offsets = [0]
-        for i, col_id_width in enumerate(col_id_widths):
-            prev_col_offset = col_offsets[i]
-            # take previous column position add current column position plus the mat_thickness
-            col_offsets.append(prev_col_offset + col_id_width + self.mat_thick)
-        # print(f"col offsets:\n{col_offsets}")
+        col_offset = 0
+        col_offsets = [col_offset]
+        for col_id_width in col_id_widths:
+            col_offset += col_id_width + self.mat_thick
+            col_offsets.append(col_offset)
 
         # do the same for the rows...
 
         row_ratio = (self.height - ((self.nbr_rows + 1) * self.mat_thick)) / self.height
-        # print(f"row ratio: {row_ratio}")
         row_id_heights = [row * row_ratio for row in self.row_heights]
-        # print(f"adj row heights:\n{row_id_heights}")
-        row_offsets = [0]
-        for i, row_id_height in enumerate(row_id_heights):
-            prev_row_offset = row_offsets[i]
-            row_offsets.append(prev_row_offset + row_id_height + self.mat_thick)
-        # print(f"row offsets:\n{row_offsets}")
+        row_offset = 0
+        row_offsets = [row_offset]
+        for row_id_height in row_id_heights:
+            row_offset += row_id_height + self.mat_thick
+            row_offsets.append(row_offset)
 
         for col in col_offsets:
             x_min = col
@@ -779,10 +899,6 @@ class Base:
                     AggregatePoint(x_min, y_min, x_avg, y_avg, x_max, y_max)
                 )
             self.agg_coords.append(row_of_agg_points)
-        # print("-" * 100)
-        # for i in self.agg_coords[0]:
-        #     print(i)
-        # print("-" * 100)
 
     def calc_dim_paths(self):
         # TODO: !!! see if we could refactor the bulk of the functionality (i.e., the code in the for loop)
@@ -794,18 +910,9 @@ class Base:
             # determine the orientation for the path by using the first 3 points of the path
             path_ori = i_path.orientation
 
-            # get the path (in a temp var) and then modify it so that we add the last
-            # point to the beginning and the first point to the end
-            tmp_pts = i_path.index_points
-            tmp_path = [tmp_pts[-1]] + tmp_pts + [tmp_pts[0]]
-
             # loop over each point in the `modified` path
             dim_path = DimPath(path_ori)
-            for i in range(len(tmp_path) - 2):
-                # get the previous, current & next Index Points
-                prev_i_point = tmp_path[i]
-                curr_i_point = tmp_path[i + 1]
-                next_i_point = tmp_path[i + 2]
+            for prev_i_point, curr_i_point, next_i_point in cyclic_n_tuples(i_path.index_points, 3, -1):
 
                 # get the avg aggregate (on center) point for the p, c & n ndx pts
                 prev_pt = self.get_avg_agg_point(prev_i_point)
@@ -941,7 +1048,49 @@ class Base:
             # TODO: link between the dim_point and the index_point
             # TODO: normalize the index_points too
 
-    def gen_svg_path(self, i: int = 0):
+    def gen_svg_base_slots(self):
+        svg_paths = []
+        half_mt = self.mat_thick * 0.5
+        first_dist = half_mt + self.wall_tbslt_dist
+        norm_dist = self.mat_thick + (2 * self.wall_tbslt_dist)
+        # print(f"### mat think: {self.mat_thick}, wall slot dist: {self.wall_tbslt_dist}")
+        for bslot in self.base_slots:
+            for intrxn_1, intrxn_2, first_ind in pair_wind(bslot.intersections, wind=True):
+                tbslt_len, n = self.calc_tbslt_len(intrxn_1, intrxn_2)
+                if bslot.type == "horz":
+                    x1 = intrxn_1.x + first_dist
+                    x2 = x1 + tbslt_len
+                    y1 = intrxn_1.y - half_mt
+                    y2 = y1 + self.mat_thick
+                else:
+                    x1 = intrxn_1.x + half_mt
+                    x2 = x1 - self.mat_thick
+                    y1 = intrxn_1.y + first_dist
+                    y2 = y1 + tbslt_len
+
+                for i in range(n):
+                    svg_cmds = []
+                    svg_cmds.append(f"M {x1} {y1}")
+                    if bslot.type == "horz":
+                        svg_cmds.append(f"H {x2}")
+                        svg_cmds.append(f"V {y2}")
+                        svg_cmds.append(f"H {x1}")
+                        x1 = x2 + norm_dist
+                        x2 = x1 + tbslt_len
+                    else:
+                        svg_cmds.append(f"V {y2}")
+                        svg_cmds.append(f"H {x2}")
+                        svg_cmds.append(f"V {y1}")
+                        y1 = y2 + norm_dist
+                        y2 = y1 + tbslt_len
+                    svg_cmds.append(f"Z")
+                    svg_path = " ".join(svg_cmds)
+                    svg_paths.append(svg_path)
+
+        svg_slots = "\n".join(svg_paths)
+        print(svg_slots)
+
+    def gen_svg_base_path(self, i: int = 0):
         # TODO: we probably need different logic for base parts versus side walls parts
         # TODO: add logic to handle different kinds of line types (fingered / smooth)
         # TODO: for base parts do we need logic to determine the type of corner and then calculate the #f/s & be differently?
@@ -1063,6 +1212,7 @@ class Base:
                 # path_cmds.append(f">>> {dir1} {dir_coord} >>>")
                 path_cmds.append(f"{dir1} {dir_coord}")
 
+        path_cmds.append("Z")
         svg_path = " ".join(path_cmds)
         print(svg_path)
 
@@ -1112,6 +1262,10 @@ class Base:
         wall = IndexWall(p1, p2, wall_type)
         self.index_walls.append(wall)
 
+    def add_base_wall(self, start: IndexPoint, end: IndexPoint, wall_type: str = "finger"):
+        wall = IndexWall(start, end, wall_type)
+        self.index_walls.append(wall)
+
 
     @classmethod
     def dim(cls, dire1, dire2, ori) -> Tuple[int, int]:
@@ -1137,19 +1291,56 @@ class Base:
         return cls.direction_dims[ori][dire1][dire2]
 
     def create_path_walls(self):
-        print("+"*100)
         for norm_index_path in self.norm_index_paths:
-            pts_len = len(norm_index_path.index_points)
-            for i in range(pts_len):
-                curr_pt = norm_index_path.index_points[i]
-                next_pt = norm_index_path.index_points[(i+1)%pts_len]
-                print(
-                    f"[{curr_pt.dim_point.copy_id}] {curr_pt.gxy} | "
-                    f"[{next_pt.dim_point.copy_id}] {next_pt.gxy}"
-                )
-                self.add_wall(curr_pt.gxy, next_pt.gxy, "finger")
-        print("+"*100)
+            for curr_pt, next_pt in cyclic_n_tuples(norm_index_path.index_points, 2, 0):
+                self.add_base_wall(curr_pt, next_pt, "finger")
 
+    def proc_walls(self):
+        # print("-" * 100)
+        walls_horz = []
+        walls_vert = []
+
+        for index_wall in self.index_walls:
+            start_avg_pt = self.get_avg_agg_point(index_wall.start_pt)
+            end_avg_pt = self.get_avg_agg_point(index_wall.end_pt)
+            wall = Wall(start_avg_pt, end_avg_pt, index_wall.wall_type)
+            if wall.super_direction == "horz":
+                walls_horz.append(wall)
+            else:
+                walls_vert.append(wall)
+            # print(f"{wall} -- {index_wall.start_pt} {index_wall.end_pt}")
+
+        bslots = {}
+        for wall_h in walls_horz:
+            for wall_v in walls_vert:
+                x_type, x_subtype, x_point = wall_h.intersect(wall_v)
+                # print(f"horz #{wall_h.id} vert #{wall_v.id} : intersection {x_type}, {x_subtype}, {x_point}")
+                if x_type:
+                    if wall_h.type == "tab_slot":
+                        bslots.setdefault(wall_h.id, BaseSlot('horz')).add(x_point)
+                        # print("added to horz base slot")
+                    if wall_v.type == "tab_slot":
+                        bslots.setdefault(wall_v.id, BaseSlot('vert')).add(x_point)
+                        # print("added to vert base slot")
+
+        for val in bslots.values():
+            self.base_slots.append(val)
+
+        # print("-" * 100)
+
+    def calc_tbslt_len(self, oc_pt1: Point, oc_pt2: Point) -> Tuple[float, int]:
+        tbslt_len = n = -1
+        span_len = Line(oc_pt1, oc_pt2).length()
+        tot_spc_len = (2 * self.wall_tbslt_dist) + self.mat_thick
+        # print(f">> pt1: {oc_pt1} {oc_pt2} span len {span_len} - 2wts+mt: {tot_spc_len}")
+        for n in range(self.max_tbslt_bt_xs, 0, -1):
+            tbslt_len = (span_len - (n * tot_spc_len)) / n
+            # print(f"   nbr of slots {n} of length {tbslt_len}")
+            if tbslt_len >= self.min_tbslt_len:
+                # print(f"   meets min slot len of {self.min_tbslt_len}")
+                break
+        # print(f">> final: {n} slots of {tbslt_len}")
+        return tbslt_len, n
 
 def main():
     #
@@ -1163,7 +1354,7 @@ def main():
     # add the polygon for the use case
     #
 
-    Test.super_all_collinear_poly(base)
+    # Test.super_all_collinear_poly(base)
     # Test.complex_poly(base)
     # Test.simple_ccw(base)
     # Test.simple_cw(base)
@@ -1174,7 +1365,7 @@ def main():
     # collinear_uu2(base)
     # collinear_dd(base)
     # Test.collinear_all(base)
-    # Test.one_inner(base)
+    Test.one_inner(base)
 
     #
     # do the calculations
@@ -1184,9 +1375,12 @@ def main():
     base.normalize_paths()
     base.create_path_walls()
 
+    base.proc_walls()
+
 
     # base.gen_svg_path()
-    base.gen_svg_path()
+    base.gen_svg_base_path()
+    base.gen_svg_base_slots()
 
     # svg_path = base.gen_svg_path_raw(0)
     # print(svg_path)
@@ -1210,7 +1404,11 @@ class Test:
             min_be_len=10.0,
             col_widths=[50, 50, 50, 50, 100],
             row_heights=[125, 50, 100, 25],
+            min_tbslt_len=50,
+            max_tbslt_bt_xs=2,
+            wall_tbslt_dist=10,
             depth=50,
+
         )
         base.calc_agg_coords()
         return base
@@ -1225,6 +1423,9 @@ class Test:
             min_be_len=10.0,
             col_widths=[100] * 10,
             row_heights=[100] * 10,
+            min_tbslt_len=75,
+            max_tbslt_bt_xs=6,
+            wall_tbslt_dist=20,
             depth=50,
         )
         base.calc_agg_coords()
@@ -1240,6 +1441,9 @@ class Test:
         base.extend_path(5, 5)
         base.extend_path(2, 5)
         base.end_path()
+
+        base.add_wall((2, 3), (8, 3))
+        base.add_wall((7, 2), (7, 8))
 
     @staticmethod
     def collinear_rr(base):
