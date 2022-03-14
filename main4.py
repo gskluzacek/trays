@@ -4,7 +4,7 @@ from operator import attrgetter
 from itertools import count
 from typing import List, Tuple, Dict, Optional
 
-from cyclic_n_tuples import cyclic_n_tuples, pair_wind
+from cyclic_n_tuples import cyclic_n_tuples, fwd_pair, rev_pair
 
 
 class Point:
@@ -626,27 +626,33 @@ class IndexWall:
         return f"{self.start_pt} {self.end_pt} | {self.start_pt.dim_point} {self.end_pt.dim_point}"
 
 
-class DimWall:
-    def __init__(self):
-        # not sure if we need something like this yet
-        pass
+class Intersection:
+    def __init__(self, intrxn: Point, x_type: str, x_subtype: str):
+        self.intrxn = intrxn
+        self.x_type = x_type
+        self.x_subtype = x_subtype
+        self.xpt_sort = (intrxn.x, intrxn.y)
 
 
 class BaseSlot:
     def __init__(self, bslot_type):
         self.type: str = bslot_type     # horz or vert
-        self._intersections: List[Point] = []
+        self._intersections: List[Intersection] = []
+        self.sorted = False
 
     @property
     def intersections(self):
-        self._sort()
+        if not self.sorted:
+            self._sort()
         return self._intersections
 
-    def add(self, intersection: Point):
-        self._intersections.append(intersection)
+    def add(self, intrxn_pt: Point, x_type: str, x_subtype: str):
+        intrxn = Intersection(intrxn_pt, x_type, x_subtype)
+        self._intersections.append(intrxn)
 
     def _sort(self):
-        self._intersections.sort(key=attrgetter('x', 'y'))
+        self.sorted = True
+        self._intersections.sort(key=attrgetter('xpt_sort'))
 
 
 class Wall:
@@ -1048,6 +1054,128 @@ class Base:
             # TODO: link between the dim_point and the index_point
             # TODO: normalize the index_points too
 
+    def gen_svg_inner_walls(self):
+        extra_space = 20
+        horz_os = extra_space
+        vert_os = self.height + extra_space
+        inc_vos = self.depth_outer + self.mat_thick + extra_space
+
+        vtab_len = (self.depth_outer - (3 * self.wall_tbslt_dist)) / 2
+        y_side_a = vert_os + self.depth_outer
+        x_side_1_b = horz_os
+        x_side_1_a = horz_os + self.mat_thick
+        cross_slot_len = self.depth_outer / 2
+
+        svg_paths = []
+        for bslot in self.base_slots:
+            svg_cmds = []
+            c_to_c_len = Line(bslot.intersections[0].intrxn, bslot.intersections[-1].intrxn).length()
+
+            # y_side_a gets initialized before the outer for loop and gets incremented
+            #   at the end of the outer for loop
+            y_side_b = y_side_a - self.wall_tbslt_dist
+            y_side_c = y_side_b - vtab_len
+            y_side_d = y_side_c - self.wall_tbslt_dist
+            y_side_e = y_side_d - vtab_len
+            y_side_f = y_side_e - self.wall_tbslt_dist
+            # x_side_1_a and x_side_1_b are constant values set before the outer for loop
+            x_side_2_a = horz_os + c_to_c_len
+            x_side_2_b = horz_os + c_to_c_len + self.mat_thick
+            y_bottom_a = y_side_a
+            y_bottom_b = y_bottom_a + self.mat_thick
+            x_bottom = x_side_1_a
+            x_top = x_side_2_a
+
+            # side 2
+            svg_cmds.append(f"M {x_side_2_a} {y_side_a}")
+            svg_cmds.append(f"V {y_side_b}")
+            svg_cmds.append(f"H {x_side_2_b}")
+            svg_cmds.append(f"V {y_side_c}")
+            svg_cmds.append(f"H {x_side_2_a}")
+            svg_cmds.append(f"V {y_side_d}")
+            svg_cmds.append(f"H {x_side_2_b}")
+            svg_cmds.append(f"V {y_side_e}")
+            svg_cmds.append(f"H {x_side_2_a}")
+            svg_cmds.append(f"V {y_side_f}")
+
+            # top
+            for intrxn_1, intrxn_2 in rev_pair(bslot.intersections[1:]):
+                span_len = Line(intrxn_1.intrxn, intrxn_2.intrxn).length()
+                x_top -= span_len
+                if intrxn_1.x_type == "cross" and bslot.type == "vert":
+                    svg_cmds.append(f"    H {x_top + self.mat_thick}")
+                    svg_cmds.append(f"V {y_side_f + cross_slot_len}")
+                    svg_cmds.append(f"H {x_top}")
+                    svg_cmds.append(f"V {y_side_f}    ")
+                else:
+                    svg_cmds.append(f"H {x_top}")
+
+
+            # side 1
+            svg_cmds.append(f"H {x_side_1_a}")
+            svg_cmds.append(f"V {y_side_e}")
+            svg_cmds.append(f"H {x_side_1_b}")
+            svg_cmds.append(f"V {y_side_d}")
+            svg_cmds.append(f"H {x_side_1_a}")
+            svg_cmds.append(f"V {y_side_c}")
+            svg_cmds.append(f"H {x_side_1_b}")
+            svg_cmds.append(f"V {y_side_b}")
+            svg_cmds.append(f"H {x_side_1_a}")
+            svg_cmds.append(f"V {y_side_a}")
+
+            # bottom
+            for intrxn_1, intrxn_2 in fwd_pair(bslot.intersections):
+                tbslt_len, n = self.calc_tbslt_len(intrxn_1.intrxn, intrxn_2.intrxn)
+                span_len = Line(intrxn_1.intrxn, intrxn_2.intrxn).length()
+                x_bottom_a = x_bottom + self.wall_tbslt_dist
+                x_bottom_b = x_bottom_a + tbslt_len
+
+                if intrxn_1.x_type == "cross" and bslot.type == "horz":
+                    x_cross_a = x_bottom - self.mat_thick
+                    x_cross_b = x_cross_a + self.mat_thick
+                    y_cross = y_bottom_a - cross_slot_len
+                    svg_cmds.append(f"H {x_cross_a}")
+                    svg_cmds.append(f"V {y_cross}")
+                    svg_cmds.append(f"H {x_cross_b}")
+                    svg_cmds.append(f"V {y_bottom_a}")
+
+                for i in range(n):
+                    svg_cmds.append(f"H {x_bottom_a}")
+                    svg_cmds.append(f"V {y_bottom_b}")
+                    svg_cmds.append(f"H {x_bottom_b}")
+                    svg_cmds.append(f"V {y_bottom_a}")
+                    x_bottom_a = x_bottom_b + (self.wall_tbslt_dist * 2) + self.mat_thick
+                    x_bottom_b = x_bottom_a + tbslt_len
+                x_bottom += span_len
+            svg_cmds.append("Z")
+
+            # slots for Tee intersections
+            x_slot =  x_side_1_a
+            for intrxn_1, intrxn_2 in fwd_pair(bslot.intersections[:-1]):
+                span_len = Line(intrxn_1.intrxn, intrxn_2.intrxn).length()
+                x_slot += span_len
+                if intrxn_2.x_type == "tee":
+                    # bottom slot
+                    svg_cmds.append(f"M {x_slot} {y_side_b}")
+                    svg_cmds.append(f"H {x_slot - self.mat_thick}")
+                    svg_cmds.append(f"V {y_side_c}")
+                    svg_cmds.append(f"H {x_slot}")
+                    svg_cmds.append("Z")
+                    # top slot
+                    svg_cmds.append(f"M {x_slot} {y_side_d}")
+                    svg_cmds.append(f"H {x_slot - self.mat_thick}")
+                    svg_cmds.append(f"V {y_side_e}")
+                    svg_cmds.append(f"H {x_slot}")
+                    svg_cmds.append("Z")
+
+            svg_path = " ".join(svg_cmds)
+            svg_paths.append(svg_path)
+
+            y_side_a += inc_vos
+
+        inner_walls = "\n".join(svg_paths)
+        print(inner_walls)
+
     def gen_svg_base_slots(self):
         svg_paths = []
         half_mt = self.mat_thick * 0.5
@@ -1055,17 +1183,17 @@ class Base:
         norm_dist = self.mat_thick + (2 * self.wall_tbslt_dist)
         # print(f"### mat think: {self.mat_thick}, wall slot dist: {self.wall_tbslt_dist}")
         for bslot in self.base_slots:
-            for intrxn_1, intrxn_2, first_ind in pair_wind(bslot.intersections, wind=True):
-                tbslt_len, n = self.calc_tbslt_len(intrxn_1, intrxn_2)
+            for intrxn_1, intrxn_2 in fwd_pair(bslot.intersections):
+                tbslt_len, n = self.calc_tbslt_len(intrxn_1.intrxn, intrxn_2.intrxn)
                 if bslot.type == "horz":
-                    x1 = intrxn_1.x + first_dist
+                    x1 = intrxn_1.intrxn.x + first_dist
                     x2 = x1 + tbslt_len
-                    y1 = intrxn_1.y - half_mt
+                    y1 = intrxn_1.intrxn.y - half_mt
                     y2 = y1 + self.mat_thick
                 else:
-                    x1 = intrxn_1.x + half_mt
+                    x1 = intrxn_1.intrxn.x + half_mt
                     x2 = x1 - self.mat_thick
-                    y1 = intrxn_1.y + first_dist
+                    y1 = intrxn_1.intrxn.y + first_dist
                     y2 = y1 + tbslt_len
 
                 for i in range(n):
@@ -1316,17 +1444,19 @@ class Base:
                 x_type, x_subtype, x_point = wall_h.intersect(wall_v)
                 # print(f"horz #{wall_h.id} vert #{wall_v.id} : intersection {x_type}, {x_subtype}, {x_point}")
                 if x_type:
+                    # TODO: the code below handles only interior walls (i.e., wall type is tab slot)
+                    #   we still need to exterior wall (wall type is finger)
                     if wall_h.type == "tab_slot":
-                        bslots.setdefault(wall_h.id, BaseSlot('horz')).add(x_point)
+                        bslots.setdefault(wall_h.id, BaseSlot('horz')).add(x_point, x_type, x_subtype)
                         # print("added to horz base slot")
                     if wall_v.type == "tab_slot":
-                        bslots.setdefault(wall_v.id, BaseSlot('vert')).add(x_point)
+                        bslots.setdefault(wall_v.id, BaseSlot('vert')).add(x_point, x_type, x_subtype)
                         # print("added to vert base slot")
 
         for val in bslots.values():
             self.base_slots.append(val)
 
-        # print("-" * 100)
+        print("-" * 100)
 
     def calc_tbslt_len(self, oc_pt1: Point, oc_pt2: Point) -> Tuple[float, int]:
         tbslt_len = n = -1
@@ -1381,6 +1511,7 @@ def main():
     # base.gen_svg_path()
     base.gen_svg_base_path()
     base.gen_svg_base_slots()
+    base.gen_svg_inner_walls()
 
     # svg_path = base.gen_svg_path_raw(0)
     # print(svg_path)
@@ -1426,7 +1557,7 @@ class Test:
             min_tbslt_len=75,
             max_tbslt_bt_xs=6,
             wall_tbslt_dist=20,
-            depth=50,
+            depth=150,
         )
         base.calc_agg_coords()
         return base

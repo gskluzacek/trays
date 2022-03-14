@@ -8,13 +8,12 @@ def cyclic_n_tuples(seq, n=3, offset=-1):
             yield seq[start:] + seq[:end]
 
 
-def pair_wind(seq, wind=None):
-    ind = None
+def fwd_pair(seq):
     seq_len = len(seq) - 1
     for i in range(seq_len):
-        if wind is not None:
-            if wind:
-                ind = (i == 0)
-            else:
-                ind = (i == seq_len)
-        yield seq[i], seq[i + 1], ind
+        yield seq[i], seq[i + 1]
+
+def rev_pair(seq):
+    seq_len = len(seq) - 1
+    for i in range(seq_len, 0, -1):
+        yield seq[i - 1], seq[i]
