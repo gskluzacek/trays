@@ -633,10 +633,13 @@ class Intersection:
         self.x_subtype = x_subtype
         self.xpt_sort = (intrxn.x, intrxn.y)
 
+    def __str__(self):
+        return f"{self.x_type} {self.x_subtype} ({self.intrxn.x}, {self.intrxn.y})"
 
-class BaseSlot:
-    def __init__(self, bslot_type):
-        self.type: str = bslot_type     # horz or vert
+
+class WallSlot:
+    def __init__(self, ws_type):
+        self.type: str = ws_type     # horz or vert
         self._intersections: List[Intersection] = []
         self.sorted = False
 
@@ -801,7 +804,8 @@ class Base:
         self.norm_dim_paths: List[DimPath] = []
 
         self.index_walls: List[IndexWall] = []
-        self.base_slots: List[BaseSlot] = []
+        self.base_slots: List[WallSlot] = []
+        self.exterior_walls: List[WallSlot] = []
 
         self.mat_thick = mat_thick
         self.fngr_len = fngr_len
@@ -1051,8 +1055,143 @@ class Base:
             self.norm_index_paths.append(norm_index_path)
             self.norm_dim_paths.append(norm_dim_path)
 
-            # TODO: link between the dim_point and the index_point
-            # TODO: normalize the index_points too
+    def gen_svg_outer_walls_1(self, vert_os):
+        extra_space = 20
+        horz_os = extra_space
+        inc_vos = self.depth_outer + self.mat_thick + extra_space
+
+        y_side_a = vert_os
+
+        svg_paths = []
+        for norm_dim_path in self.norm_dim_paths:
+            for curr_dim_pt in norm_dim_path.path_points:
+                next_dim_pt = curr_dim_pt.next_dim_pt()
+                svg_cmds = []
+
+                #
+                # bottom
+                #
+                ho_len = curr_dim_pt.outer_line_length(next_dim_pt)
+                nbr_of_fngrs, nbr_of_spcs, be_len = self.calc_min(tot_len=ho_len)
+
+                # bottom left margin for vertical finger/space joint
+                if curr_dim_pt.dire() in ("left", "right"):
+                    svg_cmds.append(f"M {horz_os} {y_side_a}")
+                    svg_cmds.append(f"V {y_side_a + self.mat_thick}")
+                    svg_cmds.append(f"H {horz_os + self.mat_thick}")
+                else:
+                    svg_cmds.append(f"M {horz_os + self.mat_thick} {y_side_a}")
+                    svg_cmds.append(f"V {y_side_a + self.mat_thick}")
+
+                # bottom left beginning length
+                x = horz_os + self.mat_thick + be_len
+                svg_cmds.append(f"H {x}")
+                svg_cmds.append(f"V {y_side_a}")
+
+                # bottom finger & spaces (repeated)
+                for _ in range(nbr_of_spcs):
+                    x += self.fngr_len
+                    svg_cmds.append(f"H {x}")
+                    svg_cmds.append(f"V {y_side_a + self.mat_thick}")
+                    x += self.spc_len
+                    svg_cmds.append(f"H {x}")
+                    svg_cmds.append(f"V {y_side_a}")
+
+                # finish with the last bottom right finger (1 more than spaces)
+                x += self.fngr_len
+                svg_cmds.append(f"H {x}")
+                svg_cmds.append(f"V {y_side_a + self.mat_thick}")
+
+                # bottom right ending length
+                x += be_len
+                svg_cmds.append(f"H {x}")
+                # svg_cmds.append("\n\n")
+
+                #
+                # Right side
+                #
+                vo_len = self.depth_outer + self.mat_thick
+                nbr_of_fngrs, nbr_of_spcs, be_len = self.calc_min(tot_len=vo_len)
+                # print(nbr_of_fngrs, nbr_of_spcs, be_len)
+
+                # calc the 2 right side x positions A & B
+                if curr_dim_pt.dire() in ("left", "right"):
+                    # horz walls start at the right outer edge,
+                    #   vert walls start at the right inner edge
+                    x += self.mat_thick
+                    svg_cmds.append(f"H {x}")
+                    x_side_2_a = x
+                    x_side_2_b = x - self.mat_thick
+                else:
+                    x_side_2_a = x
+                    x_side_2_b = x + self.mat_thick
+
+                # right side lower material thickness and beginning length
+                y = y_side_a
+                svg_cmds.append(f"V {y}")
+                y = y_side_a - be_len
+                svg_cmds.append(f"V {y}")
+
+                # right side finger & spaces (repeated)
+                for _ in range(nbr_of_spcs):
+                    svg_cmds.append(f"H {x_side_2_b}")
+                    y -= self.fngr_len
+                    svg_cmds.append(f"V {y}")
+                    svg_cmds.append(f"H {x_side_2_a}")
+                    y -= self.spc_len
+                    svg_cmds.append(f"V {y}")
+
+                # finish with the last upper right finger (1 more than spaces)
+                svg_cmds.append(f"H {x_side_2_b}")
+                y -= self.fngr_len
+                svg_cmds.append(f"V {y}")
+                svg_cmds.append(f"H {x_side_2_a}")
+
+                # upper right ending length and material thickness
+                y -= (be_len + self.mat_thick)
+                svg_cmds.append(f"V {y}")
+                # svg_cmds.append("\n\n")
+
+                x -= ho_len
+                if curr_dim_pt.dire() in ("left", "right"):
+                    x_side_2_a = x
+                    x_side_2_b = x_side_2_a + self.mat_thick
+                else:
+                    x += (self.mat_thick * 2)
+                    x_side_2_a = x
+                    x_side_2_b = x_side_2_a - self.mat_thick
+                svg_cmds.append(f"H {x}")
+
+                y += (be_len + self.mat_thick)
+                svg_cmds.append(f"V {y}")
+
+                for _ in range(nbr_of_spcs):
+                    svg_cmds.append(f"H {x_side_2_b}")
+                    y += self.fngr_len
+                    svg_cmds.append(f"V {y}")
+                    svg_cmds.append(f"H {x_side_2_a}")
+                    y += self.spc_len
+                    svg_cmds.append(f"V {y}")
+
+                svg_cmds.append(f"H {x_side_2_b}")
+                y += self.fngr_len
+                svg_cmds.append(f"V {y}")
+                svg_cmds.append(f"H {x_side_2_a}")
+
+                y += be_len
+                svg_cmds.append(f"V {y}")
+                y += self.mat_thick
+                svg_cmds.append(f"V {y}")
+
+                svg_cmds.append("Z")
+                svg_path = " ".join(svg_cmds)
+                svg_paths.append(svg_path)
+
+                y_side_a += inc_vos
+
+            outter_walls = "\n".join(svg_paths)
+            print(outter_walls)
+
 
     def gen_svg_inner_walls(self):
         extra_space = 20
@@ -1103,13 +1242,12 @@ class Base:
                 span_len = Line(intrxn_1.intrxn, intrxn_2.intrxn).length()
                 x_top -= span_len
                 if intrxn_1.x_type == "cross" and bslot.type == "vert":
-                    svg_cmds.append(f"    H {x_top + self.mat_thick}")
+                    svg_cmds.append(f"H {x_top + self.mat_thick}")
                     svg_cmds.append(f"V {y_side_f + cross_slot_len}")
                     svg_cmds.append(f"H {x_top}")
-                    svg_cmds.append(f"V {y_side_f}    ")
+                    svg_cmds.append(f"V {y_side_f}")
                 else:
                     svg_cmds.append(f"H {x_top}")
-
 
             # side 1
             svg_cmds.append(f"H {x_side_1_a}")
@@ -1175,6 +1313,8 @@ class Base:
 
         inner_walls = "\n".join(svg_paths)
         print(inner_walls)
+
+        return y_side_a
 
     def gen_svg_base_slots(self):
         svg_paths = []
@@ -1439,22 +1579,31 @@ class Base:
             # print(f"{wall} -- {index_wall.start_pt} {index_wall.end_pt}")
 
         bslots = {}
+        exterior_walls = {}
         for wall_h in walls_horz:
             for wall_v in walls_vert:
                 x_type, x_subtype, x_point = wall_h.intersect(wall_v)
                 # print(f"horz #{wall_h.id} vert #{wall_v.id} : intersection {x_type}, {x_subtype}, {x_point}")
                 if x_type:
-                    # TODO: the code below handles only interior walls (i.e., wall type is tab slot)
-                    #   we still need to exterior wall (wall type is finger)
                     if wall_h.type == "tab_slot":
-                        bslots.setdefault(wall_h.id, BaseSlot('horz')).add(x_point, x_type, x_subtype)
+                        bslots.setdefault(wall_h.id, WallSlot('horz')).add(x_point, x_type, x_subtype)
                         # print("added to horz base slot")
+                    elif wall_h.type == "finger":
+                        exterior_walls.setdefault(wall_h.id, WallSlot('horz')).add(x_point, x_type, x_subtype)
                     if wall_v.type == "tab_slot":
-                        bslots.setdefault(wall_v.id, BaseSlot('vert')).add(x_point, x_type, x_subtype)
+                        bslots.setdefault(wall_v.id, WallSlot('vert')).add(x_point, x_type, x_subtype)
                         # print("added to vert base slot")
+                    elif wall_v.type == "finger":
+                        exterior_walls.setdefault(wall_v.id, WallSlot('vert')).add(x_point, x_type, x_subtype)
 
         for val in bslots.values():
             self.base_slots.append(val)
+
+        # TODO: do we still need the self.exterior_walls attribute?
+        #   we only use it in the gen_svg_outer_walls_2() method
+        #   and I don't think this method can be finished, because it is flawed
+        for val in exterior_walls.values():
+            self.exterior_walls.append(val)
 
         print("-" * 100)
 
@@ -1511,7 +1660,8 @@ def main():
     # base.gen_svg_path()
     base.gen_svg_base_path()
     base.gen_svg_base_slots()
-    base.gen_svg_inner_walls()
+    y_pos = base.gen_svg_inner_walls()
+    base.gen_svg_outer_walls_1(y_pos)
 
     # svg_path = base.gen_svg_path_raw(0)
     # print(svg_path)
@@ -1557,7 +1707,7 @@ class Test:
             min_tbslt_len=75,
             max_tbslt_bt_xs=6,
             wall_tbslt_dist=20,
-            depth=150,
+            depth=250,
         )
         base.calc_agg_coords()
         return base
