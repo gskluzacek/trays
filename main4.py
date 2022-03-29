@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from operator import attrgetter
 from itertools import count
+from operator import attrgetter
 from typing import List, Tuple, Dict, Optional
 
 from cyclic_n_tuples import cyclic_n_tuples, fwd_pair, rev_pair
@@ -222,6 +222,7 @@ class DimPoint:
         self.copy_id = copy_id
         self.prev: Optional[DimPoint] = None
         self.next: Optional[DimPoint] = None
+        self.intersections: List[Intersection] = []
 
     def __str__(self):
         return f"[{self.direction} {self.line_type} {self.outside_pt} {self.on_center_pt} {self.inside_pt}]"
@@ -649,8 +650,10 @@ class WallSlot:
             self._sort()
         return self._intersections
 
-    def add(self, intrxn_pt: Point, x_type: str, x_subtype: str):
+    def add(self, intrxn_pt: Point, x_type: str, x_subtype: str, dim_pt: DimPoint = None):
         intrxn = Intersection(intrxn_pt, x_type, x_subtype)
+        if dim_pt and intrxn.x_type != "corner":
+            dim_pt.intersections.append(intrxn)
         self._intersections.append(intrxn)
 
     def _sort(self):
@@ -660,7 +663,7 @@ class WallSlot:
 
 class Wall:
     seq = count(1)
-    def __init__(self, pt_1: Point, pt_2: Point, w_type=None):
+    def __init__(self, pt_1: Point, pt_2: Point, w_type, dim_pt: DimPoint):
         """
         Define a Wall Object.
 
@@ -680,6 +683,7 @@ class Wall:
             if necessary.
         """
         self.id = next(self.seq)
+        self.dim_pt = dim_pt
         self.type = w_type
         t1, t2 = pt_1, pt_2
         # check if the line is horizontal or vertical. If both x coords are equal then vertical
@@ -1055,17 +1059,18 @@ class Base:
             self.norm_index_paths.append(norm_index_path)
             self.norm_dim_paths.append(norm_dim_path)
 
-    def gen_svg_outer_walls_1(self, vert_os):
+    def gen_svg_outer_walls(self, vert_os):
         extra_space = 20
         horz_os = extra_space
         inc_vos = self.depth_outer + self.mat_thick + extra_space
 
+        vtab_len = (self.depth_outer - (3 * self.wall_tbslt_dist)) / 2
         y_side_a = vert_os
 
         svg_paths = []
         for norm_dim_path in self.norm_dim_paths:
             for curr_dim_pt in norm_dim_path.path_points:
-                next_dim_pt = curr_dim_pt.next_dim_pt()
+                next_dim_pt = curr_dim_pt.next_dim_pt()         # only used to get the ho_len
                 svg_cmds = []
 
                 #
@@ -1184,6 +1189,23 @@ class Base:
                 svg_cmds.append(f"V {y}")
 
                 svg_cmds.append("Z")
+
+                if curr_dim_pt.intersections:
+                    for intrxn in curr_dim_pt.intersections:
+                        oc_len = Line(curr_dim_pt.on_center_pt, intrxn.intrxn).length()
+                        # bottom tab
+                        svg_cmds.append(f"M {horz_os + oc_len} {y_side_a - self.wall_tbslt_dist}")
+                        svg_cmds.append(f"H {horz_os + oc_len + self.mat_thick}")
+                        svg_cmds.append(f"V {y_side_a - self.wall_tbslt_dist - vtab_len}")
+                        svg_cmds.append(f"H {horz_os + oc_len}")
+                        svg_cmds.append("Z")
+                        # top tab
+                        svg_cmds.append(f"M {horz_os + oc_len} {y_side_a - self.wall_tbslt_dist - self.wall_tbslt_dist - vtab_len}")
+                        svg_cmds.append(f"H {horz_os + oc_len + self.mat_thick}")
+                        svg_cmds.append(f"V {y_side_a - self.wall_tbslt_dist - self.wall_tbslt_dist - vtab_len - vtab_len}")
+                        svg_cmds.append(f"H {horz_os + oc_len}")
+                        svg_cmds.append("Z")
+
                 svg_path = " ".join(svg_cmds)
                 svg_paths.append(svg_path)
 
@@ -1571,7 +1593,7 @@ class Base:
         for index_wall in self.index_walls:
             start_avg_pt = self.get_avg_agg_point(index_wall.start_pt)
             end_avg_pt = self.get_avg_agg_point(index_wall.end_pt)
-            wall = Wall(start_avg_pt, end_avg_pt, index_wall.wall_type)
+            wall = Wall(start_avg_pt, end_avg_pt, index_wall.wall_type, index_wall.start_pt.dim_point)
             if wall.super_direction == "horz":
                 walls_horz.append(wall)
             else:
@@ -1589,12 +1611,12 @@ class Base:
                         bslots.setdefault(wall_h.id, WallSlot('horz')).add(x_point, x_type, x_subtype)
                         # print("added to horz base slot")
                     elif wall_h.type == "finger":
-                        exterior_walls.setdefault(wall_h.id, WallSlot('horz')).add(x_point, x_type, x_subtype)
+                        exterior_walls.setdefault(wall_h.id, WallSlot('horz')).add(x_point, x_type, x_subtype, wall_h.dim_pt)
                     if wall_v.type == "tab_slot":
                         bslots.setdefault(wall_v.id, WallSlot('vert')).add(x_point, x_type, x_subtype)
                         # print("added to vert base slot")
                     elif wall_v.type == "finger":
-                        exterior_walls.setdefault(wall_v.id, WallSlot('vert')).add(x_point, x_type, x_subtype)
+                        exterior_walls.setdefault(wall_v.id, WallSlot('vert')).add(x_point, x_type, x_subtype, wall_v.dim_pt)
 
         for val in bslots.values():
             self.base_slots.append(val)
@@ -1608,6 +1630,7 @@ class Base:
         print("-" * 100)
 
     def calc_tbslt_len(self, oc_pt1: Point, oc_pt2: Point) -> Tuple[float, int]:
+        # I'm guessing that the max_tbslt_bt_xs variable is the MAX number of tabs (or slots) between 2 intersections
         tbslt_len = n = -1
         span_len = Line(oc_pt1, oc_pt2).length()
         tot_spc_len = (2 * self.wall_tbslt_dist) + self.mat_thick
@@ -1627,12 +1650,14 @@ def main():
     #
 
     # base = Test.base_1()
-    base = Test.base_2()
+    # base = Test.base_2()
+    base = Test.base_3()
 
     #
     # add the polygon for the use case
     #
 
+    Test.real_test_1_ell_shaped(base)
     # Test.super_all_collinear_poly(base)
     # Test.complex_poly(base)
     # Test.simple_ccw(base)
@@ -1644,7 +1669,7 @@ def main():
     # collinear_uu2(base)
     # collinear_dd(base)
     # Test.collinear_all(base)
-    Test.one_inner(base)
+    # Test.one_inner(base)
 
     #
     # do the calculations
@@ -1661,7 +1686,7 @@ def main():
     base.gen_svg_base_path()
     base.gen_svg_base_slots()
     y_pos = base.gen_svg_inner_walls()
-    base.gen_svg_outer_walls_1(y_pos)
+    base.gen_svg_outer_walls(y_pos)
 
     # svg_path = base.gen_svg_path_raw(0)
     # print(svg_path)
@@ -1711,6 +1736,38 @@ class Test:
         )
         base.calc_agg_coords()
         return base
+
+
+    @staticmethod
+    def base_3():
+        base = Base(
+            mat_thick=3.175,
+            fngr_len=10.0,
+            spc_len=20.0,
+            min_be_len=5.0,
+            col_widths=[100, 50, 50],
+            row_heights=[50, 50, 100],
+            min_tbslt_len=40,
+            max_tbslt_bt_xs=3,
+            wall_tbslt_dist=10,
+            depth=70,
+        )
+        base.calc_agg_coords()
+        return base
+
+    @staticmethod
+    def real_test_1_ell_shaped(base):
+        # clock wise
+        base.start_path(0, 0)
+        base.extend_path(3, 0)
+        base.extend_path(3, 3)
+        base.extend_path(1, 3)
+        base.extend_path(1, 2)
+        base.extend_path(0, 2)
+        base.end_path()
+
+        base.add_wall((2, 0), (2, 3))
+        base.add_wall((0, 1), (3, 1))
 
     @staticmethod
     def one_inner(base):
