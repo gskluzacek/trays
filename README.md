@@ -94,19 +94,27 @@ The resulting tray would look approximately something like this (I will upload t
 ```
 ## Example from Version 0.1.0
 
-I've finally progressed the code to the point where it starting to be functional
+I've finally progressed the code to the point where it starting to be functional.
 
-with the following code that configures the Tray's base pannel and wall pannels:
-![box_code](https://user-images.githubusercontent.com/15515/160508753-4531186d-3d4f-41a7-bb91-e2df5d270f5f.jpg)
+With the following code that configures the Tray's base pannel and wall pannels:
+
+<img width="300" src="https://user-images.githubusercontent.com/15515/160508753-4531186d-3d4f-41a7-bb91-e2df5d270f5f.jpg">
 
 This geneates the the necessary SVG path commands to produce an SVG file:
-![box_svg_layout](https://user-images.githubusercontent.com/15515/160508832-253c86c3-8b8d-4616-b8e0-25c684873ddc.png)
+
+<img width="600" src="https://user-images.githubusercontent.com/15515/160508832-253c86c3-8b8d-4616-b8e0-25c684873ddc.png">
+
+[tray_inner_walls_4c](https://user-images.githubusercontent.com/15515/160509742-2167b712-9451-4a38-b630-d13d1f49b0f5.svg)
+
+
+Note, only the RAW M x y H x V y commands are generated at this time. Code to write out an actual SVG file is forth coming.
 
 Here is the resulting lazer cut tray cut from cardboard.
-![box 1](https://user-images.githubusercontent.com/15515/160508901-6d69c9d7-f34e-488c-ac06-a812d42c4be5.jpg)
 
-![box 2](https://user-images.githubusercontent.com/15515/160508933-6e5a4321-07bd-4881-a093-77aa8e9dc244.jpg)
+<img width="300" src="https://user-images.githubusercontent.com/15515/160508901-6d69c9d7-f34e-488c-ac06-a812d42c4be5.jpg">
 
-![box 3](https://user-images.githubusercontent.com/15515/160508966-8d440a13-dae1-41c9-969f-662f141fcf01.jpg)
+<img width="300" src="https://user-images.githubusercontent.com/15515/160508933-6e5a4321-07bd-4881-a093-77aa8e9dc244.jpg">
 
-![box 4](https://user-images.githubusercontent.com/15515/160508984-20a33420-6ba5-477b-b5aa-5c967a13c5ff.jpg)
+<img width="300" src="https://user-images.githubusercontent.com/15515/160508966-8d440a13-dae1-41c9-969f-662f141fcf01.jpg">
+
+<img width="300" src="https://user-images.githubusercontent.com/15515/160508984-20a33420-6ba5-477b-b5aa-5c967a13c5ff.jpg">
