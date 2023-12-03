@@ -1,5 +1,13 @@
-<?xml version="1.0" encoding="utf-8" ?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xlink="http://www.w3.org/1999/xlink" baseProfile="full" height="500" version="1.1" width="500">
-  <defs/>
-  <path d="M 10 10 H 110 V 110 H 10 V 10" fill="none" stroke="green"/>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="260mm" height="800mm" viewBox="0 0 260 800" style="fill-rule:evenodd;clip-rule:evenodd" version="1.1" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:serif="http://www.serif.com/">
+	<g id="p-1">
+		<path d="M 5 5 V 20 H 0 V 40 H 5 V 70 H 0 V 90 H 5 V 120 H 0 V 140 H 5 V 170 H 0 V 190 H 5 V 220 H 0 V 240 H 5 V 255 H 20 V 260 H 40 V 255 H 70 V 260 H 90 V 255 H 120 V 260 H 140 V 255 H 170 V 260 H 190 V 255 H 220 V 260 H 240 V 255 H 255 V 240 H 260 V 220 H 255 V 190 H 260 V 170 H 255 V 140 H 260 V 120 H 255 V 90 H 260 V 70 H 255 V 40 H 260 V 20 H 255 V 5 H 240 V 0 H 220 V 5 H 190 V 0 H 170 V 5 H 140 V 0 H 120 V 5 H 90 V 0 H 70 V 5 H 40 V 0 H 20 V 5 H 5 H 5 Z" style="fill:none;fill-rule:nonzero;stroke-width:2;stroke:rgb(0,0,0)"/>
+	</g>
+	<g id="p-2">
+		<path d="M 0 270 V 275 V 290 H 5 V 310 H 0 V 340 H 5 V 360 H 0 V 390 H 5 V 410 H 0 V 440 H 5 V 460 H 0 V 490 H 5 V 510 H 0 V 525 V 530 H 5 H 20 V 525 H 40 V 530 H 70 V 525 H 90 V 530 H 120 V 525 H 140 V 530 H 170 V 525 H 190 V 530 H 220 V 525 H 240 V 530 H 255 H 260 V 525 V 510 H 255 V 490 H 260 V 460 H 255 V 440 H 260 V 410 H 255 V 390 H 260 V 360 H 255 V 340 H 260 V 310 H 255 V 290 H 260 V 275 V 270 H 0 Z" style="fill:none;fill-rule:nonzero;stroke-width:2;stroke:rgb(0,0,0)"/>
+	</g>
+	<g id="p-3">
+		<path d="M 5 540 V 545 V 560 H 0 V 580 H 5 V 610 H 0 V 630 H 5 V 660 H 0 V 680 H 5 V 710 H 0 V 730 H 5 V 760 H 0 V 780 H 5 V 795 V 800 H 20 V 795 H 40 V 800 H 70 V 795 H 90 V 800 H 120 V 795 H 140 V 800 H 170 V 795 H 190 V 800 H 220 V 795 H 240 V 800 H 255 V 795 V 780 H 260 V 760 H 255 V 730 H 260 V 710 H 255 V 680 H 260 V 660 H 255 V 630 H 260 V 610 H 255 V 580 H 260 V 560 H 255 V 545 V 540 H 5 Z" style="fill:none;fill-rule:nonzero;stroke-width:2;stroke:rgb(0,0,0)"/>
+	</g>
 </svg>

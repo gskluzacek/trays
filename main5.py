@@ -6,6 +6,8 @@ from typing import List, Tuple, Dict, Optional
 
 from cyclic_n_tuples import cyclic_n_tuples, fwd_pair, rev_pair
 
+import svg_turtles as st
+
 
 class Point:
     """
@@ -25,7 +27,7 @@ class Point:
     def __repr__(self):
         return str(self)
 
-    def orientation(self, p2: Point, p3: Point) -> str:
+    def orientation(self, p2, p3) -> str:
         """
         Calculates the orientation of 3 ordered points (on a path).
 
@@ -347,9 +349,9 @@ class DimPoint:
 
 class DimPath:
     """
-    A DimPath instance is an order sequence of DimPoint objects.
+    A DimPath instance is an ordered sequence of DimPoint objects.
 
-    This class provides a add convenience method that both creates a DimPoint object (calculating the required DimPoint
+    This class provides an add convenience method that both creates a DimPoint object (calculating the required DimPoint
     attributes) and adds the point to the DimPath's list of points.
 
     It also provides a set_wrap method that closes or finalizes an instance of the DimPath class, by updating certain
@@ -1675,15 +1677,19 @@ class Base:
         # print(f">> final: {n} slots of {tbslt_len}")
         return tbslt_len, n
 
+    def st_base_path(self):
+        # norm_dim_paths is a list of DimPath object
+        for n_dim_path in self.norm_dim_paths:
+            # a DimPath obj has: path_ori (cw, ccw) and path_points (list of DimPoint objs)
+            print(n_dim_path)
+
+
+
 def main():
     #
     # create the appropriate base for the desired polygon use case
     #
 
-    # base = Test.base_1()
-    # base = Test.base_2()
-    # base = Test.base_3()
-    # base = Test.base_4()
     base = Test.base_5()
 
     #
@@ -1691,20 +1697,6 @@ def main():
     #
 
     Test.detail_design(base)
-    # Test.real_test_1_ell_shaped(base)
-    # Test.simple_draft_board_test(base)
-    # Test.super_all_collinear_poly(base)
-    # Test.complex_poly(base)
-    # Test.simple_ccw(base)
-    # Test.simple_cw(base)
-    # two_path(base)
-    # collinear_rr(base)
-    # collinear_ll(base)
-    # collinear_uu1(base)
-    # collinear_uu2(base)
-    # collinear_dd(base)
-    # Test.collinear_all(base)
-    # Test.one_inner(base)
 
     #
     # do the calculations
@@ -1713,24 +1705,15 @@ def main():
     base.calc_dim_paths()
     base.normalize_paths()
     base.create_path_walls()
-
     base.proc_walls()
 
+    # base.gen_svg_base_path()
+    # base.gen_svg_base_slots()
+    # y_pos = base.gen_svg_inner_walls()
+    # base.gen_svg_outer_walls(y_pos)
 
-    # base.gen_svg_path()
-    base.gen_svg_base_path()
-    base.gen_svg_base_slots()
-    y_pos = base.gen_svg_inner_walls()
-    base.gen_svg_outer_walls(y_pos)
+    base.st_base_path()
 
-    # svg_path = base.gen_svg_path_raw(0)
-    # print(svg_path)
-    # svg_path = base.gen_svg_path_raw(0, "inside")
-    # print(svg_path)
-    # svg_path = base.gen_svg_path_raw(0, "on_center")
-    # print(svg_path)
-    # svg_path = base.gen_svg_path(1)
-    # print(svg_path)
     print("\n\nDONE")
 
 class Test:
@@ -1765,269 +1748,6 @@ class Test:
         base.add_wall((1, 0), (1, 2))
         base.add_wall((0, 1), (3, 1))
         base.add_wall((2, 1), (2, 2))
-
-    @staticmethod
-    def base_1():
-        base = Base(
-            mat_thick=3,
-            fngr_len=20.0,
-            spc_len=10.0,
-            min_be_len=10.0,
-            col_widths=[50, 50, 50, 50, 100],
-            row_heights=[125, 50, 100, 25],
-            min_tbslt_len=50,
-            max_tbslt_bt_xs=2,
-            wall_tbslt_dist=10,
-            depth=50,
-
-        )
-        base.calc_agg_coords()
-        return base
-
-    @staticmethod
-    def base_2():
-        # this base has a symmetric 10 x 10 layout
-        base = Base(
-            mat_thick=10,
-            fngr_len=30.0,
-            spc_len=60.0,
-            min_be_len=10.0,
-            col_widths=[100] * 10,
-            row_heights=[100] * 10,
-            min_tbslt_len=75,
-            max_tbslt_bt_xs=6,
-            wall_tbslt_dist=20,
-            depth=250,
-        )
-        base.calc_agg_coords()
-        return base
-
-
-    @staticmethod
-    def base_4():
-        base = Base(
-            mat_thick=3.175,
-            fngr_len=6.0,
-            spc_len=12.0,
-            min_be_len=3.0,
-            col_widths=[100],
-            row_heights=[100],
-            min_tbslt_len=40,
-            max_tbslt_bt_xs=3,
-            wall_tbslt_dist=10,
-            depth=40,
-        )
-        base.calc_agg_coords()
-        return base
-
-    @staticmethod
-    def simple_draft_board_test(base):
-        # clock wise
-        base.start_path(0, 0)
-        base.extend_path(1, 0)
-        base.extend_path(1, 1)
-        base.extend_path(0, 1)
-        base.end_path()
-
-    @staticmethod
-    def base_3():
-        base = Base(
-            mat_thick=3.175,
-            fngr_len=10.0,
-            spc_len=20.0,
-            min_be_len=5.0,
-            col_widths=[100, 50, 50],
-            row_heights=[50, 50, 100],
-            min_tbslt_len=40,
-            max_tbslt_bt_xs=3,
-            wall_tbslt_dist=10,
-            depth=70,
-        )
-        base.calc_agg_coords()
-        return base
-
-    @staticmethod
-    def real_test_1_ell_shaped(base):
-        # clock wise
-        base.start_path(0, 0)
-        base.extend_path(3, 0)
-        base.extend_path(3, 3)
-        base.extend_path(1, 3)
-        base.extend_path(1, 2)
-        base.extend_path(0, 2)
-        base.end_path()
-
-        base.add_wall((2, 0), (2, 3))
-        base.add_wall((0, 1), (3, 1))
-
-    @staticmethod
-    def one_inner(base):
-        # clock wise
-        base.start_path(2, 2)
-        base.extend_path(8, 2)
-        base.extend_path(8, 8)
-        base.extend_path(5, 8)
-        base.extend_path(5, 5)
-        base.extend_path(2, 5)
-        base.end_path()
-
-        base.add_wall((2, 3), (8, 3))
-        base.add_wall((7, 2), (7, 8))
-
-    @staticmethod
-    def collinear_rr(base):
-        # clock wise
-        base.start_path(0, 0)  # upper left
-        base.extend_path(2, 0)  # upper middle ???
-        base.extend_path(5, 0)  # upper right
-        base.extend_path(5, 4)  # lower right
-        base.extend_path(0, 4)  # lower left
-        base.end_path()
-
-    @staticmethod
-    def super_all_collinear_poly(base):
-        base.start_path(3, 1)       # 1     right
-        base.extend_path(6, 1)      # 2     right
-        base.extend_path(8, 1)      # 3     down
-        base.extend_path(8, 3)      # 4     down
-        base.extend_path(8, 5)      # 5     down
-        base.extend_path(8, 7)      # 6     left
-        base.extend_path(6, 7)      # 7     left
-        base.extend_path(3, 7)      # 8     left
-        base.extend_path(1, 7)      # 9     up
-        base.extend_path(1, 5)      # 10    up
-        base.extend_path(1, 3)      # 11    up
-        base.extend_path(1, 1)      # 12    right
-        base.end_path()
-
-    @staticmethod
-    def collinear_ll(base):
-        # clock wise
-        base.start_path(0, 0)  # upper left
-        base.extend_path(5, 0)  # upper right
-        base.extend_path(5, 4)  # lower right
-        base.extend_path(3, 4)  # lower middle ???
-        base.extend_path(0, 4)  # lower left
-        base.end_path()
-
-    @staticmethod
-    def collinear_uu1(base):
-        # counter clock wise
-        base.start_path(5, 2)
-        base.extend_path(5, 0)
-        base.extend_path(0, 0)
-        base.extend_path(0, 4)
-        base.extend_path(5, 4)
-        base.end_path()
-
-    @staticmethod
-    def collinear_uu2(base):
-        # counter clock wise
-        base.start_path(0, 0)
-        base.extend_path(0, 4)
-        base.extend_path(5, 4)
-        base.extend_path(5, 2)
-        base.extend_path(5, 0)
-        base.end_path()
-
-    @staticmethod
-    def collinear_dd(base):
-        # counter clock wise
-        base.start_path(0, 0)
-        base.extend_path(0, 2)
-        base.extend_path(0, 4)
-        base.extend_path(5, 4)
-        base.extend_path(5, 0)
-        base.end_path()
-
-    @staticmethod
-    def collinear_all(base):
-        # counter clock wise
-        base.start_path(0, 0)
-        base.extend_path(0, 2)  #
-        base.extend_path(0, 4)
-        base.extend_path(2, 4)  #
-        base.extend_path(5, 4)
-        base.extend_path(5, 2)  #
-        base.extend_path(5, 0)
-        base.extend_path(3, 0)  #
-        base.end_path()
-
-    @staticmethod
-    def simple_ccw(base):
-        # columns:          5   [0 to 4]
-        # rows:             4   [0 to 3]
-        # vertical walls:   6   [0 to 5]
-        # horizontal walls: 5   [0 to 4]
-
-        # counter clock wise
-        base.start_path(0, 4)  # lower left
-        base.extend_path(5, 4)  # lower right
-        base.extend_path(5, 0)  # upper right
-        base.extend_path(0, 0)  # upper left
-        base.end_path()
-
-    @staticmethod
-    def simple_cw(base):
-        # clock wise
-        base.start_path(0, 4)  # lower left
-        base.extend_path(0, 0)  # upper left
-        base.extend_path(5, 0)  # upper right
-        base.extend_path(5, 4)  # lower right
-        base.end_path()
-
-    @staticmethod
-    def two_path(base):
-        # clock wise
-        base.start_path(0, 4)  # upper left
-        base.extend_path(0, 0)  # lower left
-        base.extend_path(5, 0)  # upper right
-        base.extend_path(5, 4)  # lower right
-        base.end_path()
-
-        base.start_path(2, 1)
-        base.extend_path(4, 1)
-        base.extend_path(4, 3)
-        base.extend_path(2, 3)
-        # base.end_path()
-
-    @staticmethod
-    def complex_poly(base):
-        base.start_path(0, 10)
-        base.extend_path(1, 10)
-        base.extend_path(1, 8)
-        base.extend_path(3, 8)
-        base.extend_path(3, 9)
-        base.extend_path(2, 9)
-        base.extend_path(2, 10)
-        base.extend_path(10, 10)
-        base.extend_path(10, 7)
-        base.extend_path(8, 7)
-        base.extend_path(8, 4)
-        base.extend_path(10, 4)
-        base.extend_path(10, 2)
-        base.extend_path(8, 2)
-        base.extend_path(8, 0)
-        base.extend_path(3, 0)
-        base.extend_path(3, 1)
-        base.extend_path(4, 1)
-        base.extend_path(4, 3)
-        base.extend_path(2, 3)
-        base.extend_path(2, 0)
-        base.extend_path(0, 0)
-        base.extend_path(0, 5)
-        base.extend_path(5, 5)
-        base.extend_path(5, 3)
-        base.extend_path(6, 3)
-        base.extend_path(6, 8)
-        base.extend_path(7, 8)
-        base.extend_path(7, 9)
-        base.extend_path(4, 9)
-        base.extend_path(4, 8)
-        base.extend_path(5, 8)
-        base.extend_path(5, 6)
-        base.extend_path(0, 6)
-        base.end_path()
 
 
 if __name__ == "__main__":

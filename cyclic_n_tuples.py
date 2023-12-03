@@ -13,7 +13,15 @@ def fwd_pair(seq):
     for i in range(seq_len):
         yield seq[i], seq[i + 1]
 
+
 def rev_pair(seq):
     seq_len = len(seq) - 1
     for i in range(seq_len, 0, -1):
         yield seq[i - 1], seq[i]
+
+
+def fwd_n_tuple(seq, n=3):
+    m = n - 1
+    seq_len = len(seq) - m
+    for i in range(seq_len):
+        yield tuple(seq[i:i + n])
