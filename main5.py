@@ -31,29 +31,31 @@ class Point:
         """
         Calculates the orientation of 3 ordered points (on a path).
 
-        :param p2:  the 2nd point in the list of 3 ordered points
-        :param p3:  the 3rd point in the list of 3 ordered points
-        :return:    the orientation of the 3 ordered points
+        :param p2:  The 2nd point in the list of 3 ordered points
+        :param p3:  The 3rd point in the list of 3 ordered points
+        :return:    The orientation of the 3 ordered points
 
-        self is the 1st point in the list of 3 ordered points
+        Self is the 1st point in the list of 3 ordered points
 
-        the 3 ordered points are used to form 2 lines
+        The 3 ordered points are used to form 2 lines
             - line 1: p1, p2
             - line 2: p2, p3
 
-        depending on the relative "direction" of each line, the orientation is determined.
-        in this case direction is actual the slope of a line. That is: rise over run, where rise is defined as
+        Depending on the relative "direction" of each line, the orientation is determined.
+        In this case direction is actually the slope of a line. That is: rise over run, where rise is defined as
         y2 - y1 and run is defined as x2 - x1 --> (y2 - y1) / (x2 - x1).
 
-        if we calculate the slope of line 1 and line 2, then compare those slopes we can say:
-        - if the slope of line 1 is GREATER than the slope of line 2 then the two lines (and therefor the 3 points)
+        If we calculate the slope of line 1 and line 2, then compare those slopes, we can say:
+        - If the slope of line 1 is GREATER than the slope of line 2, then the two lines (and therefore the 3 points)
           have a clock wise orientation
-        - if the slope of line 2 is greater (i.e., the slope of line 1 is LESS than the slope of line 2) then the
-          two lines have a counter clock wise orientation
-        - if the slope of lines 1 and 2 are equal, the orientation cannot be determined from these 3 points as the
+        - If the slope of line 2 is greater (i.e., the slope of line 1 is LESS than the slope of line 2), then the
+          two lines have a counter-clock wise orientation
+        - If the slope of lines 1 and 2 are equal, the orientation cannot be determined from these 3 points as the
           line are collinear.
 
-        refer to the Geeks For Geeks article below for details on the calculation used
+        To avoid performing many division operations, we use the 2D cross-product formula instead of calculating multiple slope values.:
+
+        Refer to the Geeks For Geeks article below for details on the calculation used in this method.
         https://www.geeksforgeeks.org/orientation-3-ordered-points/
         see also
         https://tutorialspoint.dev/algorithm/geometric-algorithms/orientation-3-ordered-points
@@ -584,6 +586,8 @@ class AggregatePoint:
             return Point(self.x2, self.y3)
         elif pt_nbr == 8:
             return Point(self.x3, self.y3)
+        else:
+            raise ValueError(f"Invalid point number: {pt_nbr}")
 
 
 class IndexPoint:
@@ -821,13 +825,15 @@ class Base:
         self.depth_outer = depth
 
         self.on_center = on_center
+        material_adjustment = self.mat_thick if self.on_center else 0
+
         self.col_widths = col_widths
         self.nbr_cols = len(self.col_widths)
-        self.width = sum(self.col_widths) + self.mat_thick if self.on_center else 0
+        self.width = sum(self.col_widths) + material_adjustment
 
         self.row_heights = row_heights
         self.nbr_rows = len(self.row_heights)
-        self.height = sum(self.row_heights) + self.mat_thick if self.on_center else 0
+        self.height = sum(self.row_heights) + material_adjustment
 
         self.agg_coords: List[List[AggregatePoint]] = []
 
@@ -907,6 +913,8 @@ class Base:
         #   total_mat_thickness = (nbr_of_cols + 1) * mat_thick
         #   total_inside_dim_cols_widths = total_of_all_columns - total_mat_thickness
         #   ratio = total_inside_dim_cols_widths / total_of_all_columns
+
+        # self width is the sum of all the column widths (and conditionally plus the material thickness if the ON-CENTER flag is True, but for this logic it will be set to False)
         col_ratio = (self.width - ((self.nbr_cols + 1) * self.mat_thick)) / self.width
 
         # calc adjusted columns (i.e., inside dim width)
@@ -1010,12 +1018,16 @@ class Base:
 
         path_ori = None
         for i in range(len(i_path.index_points) - 2):
+
             i_pt_1 = i_path.index_points[i]
             pt_1 = self.get_avg_agg_point(i_pt_1)
+
             i_pt_2 = i_path.index_points[i + 1]
             pt_2 = self.get_avg_agg_point(i_pt_2)
+
             i_pt_3 = i_path.index_points[i + 2]
             pt_3 = self.get_avg_agg_point(i_pt_3)
+
             path_ori = pt_1.orientation(pt_2, pt_3)
             if path_ori != "col":
                 break
