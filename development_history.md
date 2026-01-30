@@ -106,3 +106,92 @@ if the x-coordinates are the same
 | CW          | E              | interior     | y           | -           | y            | +            |
 | CW          | W              | interior     | y           | +           | y            | -            |
 
+## Mating Surfaces clearance adjustment
+
+There are 2 kinds of surfaces
+* cut surfaces: **CS** - this is the edge that is left after cutting the part of of the material. the edge (cut surface) will have the dimensions of the length of the cut by the thickness of the material. the length of the cut can be adjusted to allow a larger gap to make fitting the parts together easier.
+* material surfaces **MS** - this is the face of the material. the face of the material cannot be adjusted, so we must adjust the dimensions of the cut surface to allow for the material to fit.
+
+We must examine each surface type that is involved in the mate. This will involve at least 1 cut surface.
+
+we need to apply clearance adjustments to mating surfaces using the rules below. 
+1. a cut surface mating with nothing - no adjustments are needed.
+2. one pair of cut surfaces (2 cut surfaces total) mating with each other (1 cut surface on each part)
+3. two pairs of cut surfaces (4 cut surfaces total) mating with each other ( 2 cut surfaces on each part)
+4. one cut surface mating with one material surface (1 pair)
+5. two pairs of: one cut surface mating with one material surface (2 pairs) - (total 2 opposing cut surfaces on the 1st part and 2 material surfaces on opposite sides of the 2nd part)
+
+### T1: a cut surface mating with nothing
+
+There is no need to adjust the mating surface clearance.
+
+### T2: one pair of cut surfaces mating with each other
+
+This use case is found when:
+1. we have a `cross` intersection: the 2 cut surfaces between the short (length = material thickness) horizontal cuts (one on each wall forming the cross instersection)
+
+### T3: two pairs of cut surfaces mating with each other
+
+This use case is found when:
+1. we have a `finger` / `space` joint where an exterior wall connects with the base 
+2. we have a `finger` / `space` joint where two walls meet at a `corner` intersection
+3. we have a `tab` / `slot` joint where two walls meet at a `tee` intersection 
+4. we have a `tab` / `slot` joint where an interior wall connects with the base
+
+### T4: one cut surface mating with one material surface
+
+This use case is found when:
+1. we have a `tab` / `slot` joint where two walls meet at a `tee` intersection
+2. we have a `tab` / `slot` joint where an interior wall connects with the base
+
+### T5: two pairs of one cut surface mating with one material surface
+
+This use case is found when:
+1. we have a `tab` / `slot` joint where two walls meet at a `tee` intersection 
+2. we have a `tab` / `slot` joint where an interior wall connects with the base
+3. we have a `cross` intersection between the long vertical cuts surface and either side of the material surface.
+
+## Or put another way:
+
+### finger / space joints
+1. wall corner intersection: T4 & T3
+2. exterior wall base connection: T4 & T3
+
+### tab / slot joints
+1. wall tee intersection: 
+   1. wall -a- : T5 & T3
+   2. wall -b- : T4 & T3
+2. interior wall base connection:
+   1. wall: T4 & T3
+   2. base: T5 & T3
+
+### dual slot joints
+1. wall cross intersection:
+   1. wall - upper slot - : T5 & T2
+   2. wall - lower slot - : T5, T2 & T4 (???)
+
+
+## joints, intersections & walls
+
+* finger / space joints
+* tab / slot joints
+* dual slot joints
+ 
+* corner intersection
+* tee intersection
+* cross intersection
+
+* interior wall
+* exterior wall
+* combination wall (has both an interior portion and an exterior portion)
+
+### usage
+
+1. exterior walls use finger / space joints to connect to the base
+2. interior walls use tab / slot joints to connect to the base
+3. combination walls use both finger / space joints and tab / slot joints to connect to the base
+   1. this can become a little complicated if there are 2 combination walls meeting at a cross intersection
+   2. or if there is 1 combination wall meeting an exterior wall at a tee intersection
+4. corner intersections between 2 walls use finger / space joints
+5. tee intersections between 2 walls use tab / slot joints
+6. cross intersections between 2 walls use dual slot joints

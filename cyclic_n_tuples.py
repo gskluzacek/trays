@@ -32,8 +32,7 @@ class WrapSequence(Protocol[T]):
 
 def cyclic_n_tuples(seq: WrapSequence[T], n: int = 3, offset: int = -1) -> Iterator[Chunk[T]]:
     """
-    Staring at offset, loops over seq yielding chunks of length n, wrapping around the end back to the beginning if necessary.
-    Starting at `offset`, yield chunks of length `n`, wrapping around the end to the beginning as needed.
+    Staring at offset, loops over seq yielding chunks of length n, wrapping around the end to the beginning as necessary.
 
     :param seq: The list of elements to loop over.
     :param n: The number of elements to `yield` as a chunk for each iteration of the loop.

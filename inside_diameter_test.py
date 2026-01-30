@@ -1,33 +1,61 @@
 from __future__ import annotations
 
 from enum import Enum
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from typing import Generic, SupportsFloat, TypeVar
+from typing import overload
 
-from cyclic_n_tuples import fwd_n_tuple
+from cyclic_n_tuples import fwd_n_tuple, cyclic_n_tuples
 
 T = TypeVar("T", bound=SupportsFloat)
 
 
-class Orientation(Enum):
+class PathOrientation(Enum):
     CW = "clockwise"
     CCW = "counter_clockwise"
     COL = "collinear"
     NONE = "none"
 
 
+class LineOrientation(Enum):
+    VERT = "vertical"
+    HORZ = "horizontal"
+    NONE = "none"
+
 class Point(Generic[T]):
     def __init__(self, x: T, y: T) -> None:
         self.x = x
         self.y = y
+        # these private attributes are used at the line level and are accessed via the line's property not the point's property
+        self._line_orientation = LineOrientation.NONE
+
+    @property
+    def line_orientation(self) -> LineOrientation:
+        return self._line_orientation
+
+    @line_orientation.setter
+    def line_orientation(self, value: LineOrientation) -> None:
+        self._line_orientation = value
+
+    def set_line_orientation(self, other_point: Point) -> None:
+        if other_point.x == self.x:
+            self.line_orientation = LineOrientation.VERT
+        elif other_point.y == self.y:
+            self.line_orientation = LineOrientation.HORZ
+        else:
+            raise ValueError("cannot set line orientation for points that are not collinear")
 
     def __repr__(self) -> str:
-        return f"Point(x={self.x!r}, y={self.y!r})"
+        return f"Point(x={self.x}, y={self.y})"
 
     def __str__(self) -> str:
         return f"[{self.x}, {self.y}]"
 
-    def orientation(self, p2: Point[T], p3: Point[T]) -> Orientation:
+    @property
+    def coords(self) -> tuple[T, T]:
+        return self.x, self.y
+
+    def orientation(self, p2: Point[T], p3: Point[T]) -> PathOrientation:
         p1 = self
         x1, y1 = float(p1.x), float(p1.y)
         x2, y2 = float(p2.x), float(p2.y)
@@ -37,29 +65,82 @@ class Point(Generic[T]):
 
         # note we are operating in quadrant 4, so we are swapping the values that correspond to cw & ccw
         if val > 0:
-            return Orientation.CCW
+            return PathOrientation.CCW
         elif val < 0:
-            return Orientation.CW
+            return PathOrientation.CW
         else:
-            return Orientation.COL
+            return PathOrientation.COL
 
 
 class Line(Generic[T]):
     def __init__(self, p1: Point[T], p2: Point[T]) -> None:
         self.p1 = p1
         self.p2 = p2
+        if self.orientation == LineOrientation.NONE:
+            self.p2.set_line_orientation(self.p1)
+
+    @property
+    def orientation(self) -> LineOrientation:
+        return self.p2.line_orientation
 
     def __repr__(self) -> str:
-        return f"Line(p1={self.p1!r}, p2={self.p2!r})"
+        return f"Line(p1={self.p1!r}, p2={self.p2!r}, type={self.orientation!r})"
 
     def __str__(self) -> str:
-        return f"[{self.p1}, {self.p2}]"
+        return f"[{self.p1}, {self.p2}, {self.orientation}]"
+
+
+class _LinesView(Sequence[Line]):
+    """Dynamic, list-like view over a Path's points that yields Line objects."""
+
+    def __init__(self, path: Path) -> None:
+        self._path = path
+
+    def __len__(self) -> int:
+        return len(self._path.points)
+
+    @overload
+    def __getitem__(self, index: int) -> Line: ...
+    @overload
+    def __getitem__(self, index: slice) -> list[Line]: ...
+
+    def __getitem__(self, index: int | slice) -> Line | list[Line]:
+        if isinstance(index, slice):
+            start, stop, step = index.indices(len(self))
+            return [self[i] for i in range(start, stop, step)]
+
+        n = len(self)
+        if n == 0:
+            raise IndexError("path.lines is empty (no points)")
+
+        i = index % n
+
+        pts = self._path.points
+        p1 = pts[i]
+        p2 = pts[(i + 1) % n]
+        # TODO: creating a new Line object, will initialize point p2's line orientation if it is LineOrientation.NONE
+        return Line(p1, p2)
+
+    def __iter__(self) -> Iterator[Line]:
+        # TODO: iteration will call __getitem__ which will create a new Line object, which will initialize point p2's line orientation if it is LineOrientation.NONE
+        for i in range(len(self)):
+            yield self[i]
 
 
 class Path(Generic[T]):
-    def __init__(self, start_point: Point[T] | None = None, orientation: Orientation = Orientation.NONE) -> None:
+    def __init__(self, start_point: Point[T] | None = None, orientation: PathOrientation = PathOrientation.NONE) -> None:
         self.points: list[Point[T]] = [start_point] if start_point else []
-        self.orientation: Orientation = orientation
+        self.orientation: PathOrientation = orientation
+
+    @property
+    def lines(self) -> Sequence[Line]:
+        return _LinesView(self)
+
+    def finalize(self) -> None:
+        # todo: implement any finalization logic if needed - must have all details within the path to do so
+        for line in self.lines:
+            pass
+
 
     @property
     def points_as_tuples(self) -> Iterator[tuple[T, T]]:
@@ -84,19 +165,19 @@ class Path(Generic[T]):
                 f"please check that you have 3 or more points in your path. Path len: {len(self.points)}"
             )
 
-        orientation = Orientation.NONE
+        orientation = PathOrientation.NONE
         for pt_1, pt_2, pt_3 in fwd_n_tuple(self.points):
             orientation = pt_1.orientation(pt_2, pt_3)
-            if orientation != Orientation.COL:
+            if orientation != PathOrientation.COL:
                 break
 
-        if orientation == Orientation.COL:
+        if orientation == PathOrientation.COL:
             raise ValueError(
                 "could not determine the path's orientation (clockwise or counter clockwise). "
                 "please check that all points in the path are not collinear"
             )
 
-        if orientation == Orientation.NONE:
+        if orientation == PathOrientation.NONE:
             raise ValueError("exhausted path without determining the orientation")
 
         self.orientation = orientation
@@ -176,6 +257,7 @@ class Tray:
 
     def end_base(self) -> None:
         self.index_paths[-1].set_orientation()
+        self.index_paths[-1].finalize()
 
     def add_wall(self, start_indexes: tuple[int, int], end_indexes: tuple[int, int]) -> None:
         index_pt_1 = Point[int](*start_indexes)
@@ -183,33 +265,43 @@ class Tray:
         index_wall = Line[int](index_pt_1, index_pt_2)
         self.index_walls.append(index_wall)
 
+    def auto_generate_exterior_base_walls(self):
+        for index_path in self.index_paths:
+            for p1, p2 in cyclic_n_tuples(index_path.points, 2, 0):
+                self.add_wall(p1.coords, p2.coords)
 
 def main():
+    auto_generate_exterior_base_walls = True
     material_thickness: float = 5
     inside_dim_cols: list[float] = [42.5, 70, 67.5]
     inside_dim_rows: list[float] = [67.5, 117.5]
 
     tray = Tray(material_thickness, inside_dim_cols, inside_dim_rows)
-    print(tray.inside_dim_cols)
-    print(tray.inside_dim_rows)
 
-    tray.calc_center_to_center_dims()
-    print(tray.center_to_center_dim_cols)
-    print(tray.center_to_center_dim_rows)
-
-    tray.calc_center_to_center_points()
-    print(tray.center_to_center_points)
-
+    # define the polygon for the tray's base
     tray.start_base(0, 0)
     tray.extend_base(3, 0)
     tray.extend_base(3, 2)
     tray.extend_base(0, 2)
     tray.end_base()
-    tray.calc_center_to_center_paths()
 
+    # add lines to represent the walls of the tray (these are the exterior walls)
+    if auto_generate_exterior_base_walls:
+        tray.auto_generate_exterior_base_walls()
+    else:
+        tray.add_wall((0, 0), (3, 0))
+        tray.add_wall((3, 0), (3, 2))
+        tray.add_wall((3, 2), (0, 2))
+        tray.add_wall((0, 2), (0, 0))
+
+    # add lines to represent the walls of the tray (these are the interior walls)
     tray.add_wall((1, 0), (1, 2))
     tray.add_wall((0, 1), (3, 1))
     tray.add_wall((2, 1), (2, 2))
+
+    tray.calc_center_to_center_dims()
+    tray.calc_center_to_center_points()
+    tray.calc_center_to_center_paths()
     tray.calc_center_to_center_walls()
 
     ...
