@@ -5,6 +5,7 @@ from point import Point, LineOrientation
 
 T = TypeVar("T", bound=SupportsFloat)
 
+
 class Line(Generic[T]):
     def __init__(self, p1: Point[T], p2: Point[T]) -> None:
         self.p1 = p1

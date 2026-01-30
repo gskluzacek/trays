@@ -9,6 +9,7 @@ from cyclic_n_tuples import fwd_n_tuple
 
 T = TypeVar("T", bound=SupportsFloat)
 
+
 class _LinesView(Sequence[Line]):
     """Dynamic, list-like view over a Path's points that yields Line objects."""
 
@@ -45,8 +46,13 @@ class _LinesView(Sequence[Line]):
         for i in range(len(self)):
             yield self[i]
 
+
 class Path(Generic[T]):
-    def __init__(self, start_point: Point[T] | None = None, orientation: PathOrientation = PathOrientation.NONE) -> None:
+    def __init__(
+        self,
+        start_point: Point[T] | None = None,
+        orientation: PathOrientation = PathOrientation.NONE,
+    ) -> None:
         self.points: list[Point[T]] = [start_point] if start_point else []
         self.orientation: PathOrientation = orientation
 
@@ -69,8 +75,7 @@ class Path(Generic[T]):
     def set_orientation(self) -> None:
         if len(self.points) < 3:
             raise ValueError(
-                f"could not determine the path's orientation (clockwise or counter clockwise). "
-                f"please check that you have 3 or more points in your path. Path len: {len(self.points)}"
+                f"could not determine the path's orientation (clockwise or counter clockwise). please check that you have 3 or more points in your path. Path len: {len(self.points)}"
             )
 
         orientation = PathOrientation.NONE
@@ -81,8 +86,7 @@ class Path(Generic[T]):
 
         if orientation == PathOrientation.COL:
             raise ValueError(
-                "could not determine the path's orientation (clockwise or counter clockwise). "
-                "please check that all points in the path are not collinear"
+                "could not determine the path's orientation (clockwise or counter clockwise). please check that all points in the path are not collinear"
             )
 
         if orientation == PathOrientation.NONE:

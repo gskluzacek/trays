@@ -5,16 +5,19 @@ from typing import Generic, SupportsFloat, TypeVar
 
 T = TypeVar("T", bound=SupportsFloat)
 
+
 class PathOrientation(Enum):
     CW = "clockwise"
     CCW = "counter_clockwise"
     COL = "collinear"
     NONE = "none"
 
+
 class LineOrientation(Enum):
     VERT = "vertical"
     HORZ = "horizontal"
     NONE = "none"
+
 
 class Point(Generic[T]):
     def __init__(self, x: T, y: T) -> None:

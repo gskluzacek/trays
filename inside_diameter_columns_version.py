@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from point import Point
-from line import Line
-from path import Path
 from tray import Tray
+
 
 def main():
     auto_generate_exterior_base_walls = True

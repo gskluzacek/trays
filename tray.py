@@ -10,6 +10,7 @@ from cyclic_n_tuples import cyclic_n_tuples
 
 T = TypeVar("T", bound=SupportsFloat)
 
+
 class Tray:
     def __init__(self, material_thickness: float, inside_dim_cols: list[float], inside_dim_rows: list[float]):
         self.index_paths: list[Path[int]] = []
@@ -33,14 +34,12 @@ class Tray:
         return map(lambda wall: (wall.p1.x, wall.p1.y, wall.p2.x, wall.p2.y), self.index_walls)
 
     def calc_center_to_center_dims(self):
-        self.center_to_center_dim_cols = list(map(
-            lambda inside_dim: inside_dim + self.material_thickness,
-            self.inside_dim_cols
-        ))
-        self.center_to_center_dim_rows = list(map(
-            lambda inside_dim: inside_dim + self.material_thickness,
-            self.inside_dim_rows
-        ))
+        self.center_to_center_dim_cols = list(
+            map(lambda inside_dim: inside_dim + self.material_thickness, self.inside_dim_cols)
+        )
+        self.center_to_center_dim_rows = list(
+            map(lambda inside_dim: inside_dim + self.material_thickness, self.inside_dim_rows)
+        )
 
     def calc_center_to_center_points(self):
         material_adjustment = self.material_thickness / 2.0
