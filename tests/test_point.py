@@ -46,33 +46,22 @@ def test_point_coords():
 
 def test_orientation_collinear():
     p1 = Point(0, 0)
-    p2 = Point(1, 1)
-    p3 = Point(2, 2)
+    p2 = Point(10, 0)
+    p3 = Point(20, 0)
     assert p1.orientation(p2, p3) == PathOrientation.COL
 
 def test_orientation_clockwise():
-    # In quadrant 4 (y increases downwards), or standard Cartesian?
-    # val = ((y2 - y1) * (x3 - x2)) - ((x2 - x1) * (y3 - y2))
-    # If val < 0, it's CW.
-    # p1=(0,0), p2=(1,0), p3=(1,1)
-    # y1=0, x1=0; y2=0, x2=1; y3=1, x3=1
-    # val = ((0 - 0) * (1 - 1)) - ((1 - 0) * (1 - 0))
-    # val = (0 * 0) - (1 * 1) = -1
-    # Should be CW.
+    # p1=(0,0), p2=(10,0), p3=(10,10) -> val = (0*0) - (10*10) = -100 -> CW
     p1 = Point(0, 0)
-    p2 = Point(1, 0)
-    p3 = Point(1, 1)
+    p2 = Point(10, 0)
+    p3 = Point(10, 10)
     assert p1.orientation(p2, p3) == PathOrientation.CW
 
 def test_orientation_counter_clockwise():
-    # p1=(0,0), p2=(1,1), p3=(1,0)
-    # y1=0, x1=0; y2=1, x2=1; y3=0, x3=1
-    # val = ((1 - 0) * (1 - 1)) - ((1 - 0) * (0 - 1))
-    # val = (1 * 0) - (1 * -1) = 1
-    # Should be CCW.
+    # p1=(0,0), p2=(0,10), p3=(10,10) -> val = (10*10) - (0*0) = 100 -> CCW
     p1 = Point(0, 0)
-    p2 = Point(1, 1)
-    p3 = Point(1, 0)
+    p2 = Point(0, 10)
+    p3 = Point(10, 10)
     assert p1.orientation(p2, p3) == PathOrientation.CCW
 
 def test_point_with_floats():

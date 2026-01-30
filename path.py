@@ -56,7 +56,7 @@ class Path(Generic[T]):
 
     def finalize(self) -> None:
         # todo: implement any finalization logic if needed - must have all details within the path to do so
-        for line in self.lines:
+        for _ in self.lines:
             pass
 
     @property

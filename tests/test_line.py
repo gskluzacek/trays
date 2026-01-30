@@ -22,7 +22,7 @@ def test_line_init_none_already_set():
     # TODO: this test kind of exposes a flaw in the implementation, a line that is not horizontal or vertical can
     #  be created and the edit bypassed by manually setting the p2's line_orientation to something not equal to NONE
     p1 = Point(0, 0)
-    p2 = Point(10, 10) # Not horizontal or vertical
+    p2 = Point(10, 10) # Diagonal! - Not horizontal or vertical
     p2.line_orientation = LineOrientation.HORZ
     
     # If set_line_orientation was triggered, it would raise ValueError 
@@ -48,7 +48,7 @@ def test_line_init_none_already_set_incorrect():
 
 def test_line_orientation_error():
     p1 = Point(0, 0)
-    p2 = Point(10, 10)
+    p2 = Point(10, 10) # Diagonal! - Not horizontal or vertical
     with pytest.raises(ValueError, match="cannot set line orientation for points that are not collinear"):
         Line(p1, p2)
 
