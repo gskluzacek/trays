@@ -1,0 +1,98 @@
+from __future__ import annotations
+
+from collections.abc import Iterator
+from typing import TypeVar, SupportsFloat
+
+from point import Point
+from line import Line
+from path import Path
+from cyclic_n_tuples import cyclic_n_tuples
+
+T = TypeVar("T", bound=SupportsFloat)
+
+class Tray:
+    def __init__(self, material_thickness: float, inside_dim_cols: list[float], inside_dim_rows: list[float]):
+        self.index_paths: list[Path[int]] = []
+        self.index_walls: list[Line[int]] = []
+
+        self.material_thickness: float = material_thickness
+
+        self.inside_dim_cols: list[float] = inside_dim_cols
+        self.inside_dim_rows: list[float] = inside_dim_rows
+
+        self.center_to_center_dim_cols: list[float] = []
+        self.center_to_center_dim_rows: list[float] = []
+
+        self.center_to_center_points: list[list[Point[float]]] = []
+
+        self.center_to_center_paths: list[Path[float]] = []
+        self.center_to_center_walls: list[Line[float]] = []
+
+    @property
+    def ndx_walls_as_tuples(self) -> Iterator[tuple[T, T, T, T]]:
+        return map(lambda wall: (wall.p1.x, wall.p1.y, wall.p2.x, wall.p2.y), self.index_walls)
+
+    def calc_center_to_center_dims(self):
+        self.center_to_center_dim_cols = list(map(
+            lambda inside_dim: inside_dim + self.material_thickness,
+            self.inside_dim_cols
+        ))
+        self.center_to_center_dim_rows = list(map(
+            lambda inside_dim: inside_dim + self.material_thickness,
+            self.inside_dim_rows
+        ))
+
+    def calc_center_to_center_points(self):
+        material_adjustment = self.material_thickness / 2.0
+
+        center_point_x_coords = [material_adjustment]
+        for i, inside_dim in enumerate(self.center_to_center_dim_cols):
+            center_point_x_coords.append(center_point_x_coords[i] + inside_dim)
+
+        center_point_y_coords = [material_adjustment]
+        for i, inside_dim in enumerate(self.center_to_center_dim_rows):
+            center_point_y_coords.append(center_point_y_coords[i] + inside_dim)
+
+        for center_point_y in center_point_y_coords:
+            row_of_center_to_center_points: list[Point[float]] = []
+            for center_point_x in center_point_x_coords:
+                row_of_center_to_center_points.append(Point[float](center_point_x, center_point_y))
+            self.center_to_center_points.append(row_of_center_to_center_points)
+
+    def calc_center_to_center_paths(self):
+        for index_path in self.index_paths:
+            center_to_center_path = Path[float](orientation=index_path.orientation)
+            for ndx_px, ndx_py in index_path.points_as_tuples:
+                center_to_center_path.add_point(self.center_to_center_points[ndx_py][ndx_px])
+            self.center_to_center_paths.append(center_to_center_path)
+
+    def calc_center_to_center_walls(self):
+        for p1x, p1y, p2x, p2y in self.ndx_walls_as_tuples:
+            p1 = self.center_to_center_points[p1y][p1x]
+            p2 = self.center_to_center_points[p2y][p2x]
+            self.center_to_center_walls.append(Line[float](p1, p2))
+
+    def start_base(self, x_index: int, y_index: int) -> None:
+        index_pt = Point[int](x_index, y_index)
+        index_path = Path[int](index_pt)
+        self.index_paths.append(index_path)
+
+    def extend_base(self, x_index: int, y_index: int) -> None:
+        index_path = self.index_paths[-1]
+        index_pt = Point[int](x_index, y_index)
+        index_path.add_point(index_pt)
+
+    def end_base(self) -> None:
+        self.index_paths[-1].set_orientation()
+        self.index_paths[-1].finalize()
+
+    def add_wall(self, start_indexes: tuple[int, int], end_indexes: tuple[int, int]) -> None:
+        index_pt_1 = Point[int](*start_indexes)
+        index_pt_2 = Point[int](*end_indexes)
+        index_wall = Line[int](index_pt_1, index_pt_2)
+        self.index_walls.append(index_wall)
+
+    def auto_generate_exterior_base_walls(self):
+        for index_path in self.index_paths:
+            for p1, p2 in cyclic_n_tuples(index_path.points, 2, 0):
+                self.add_wall(p1.coords, p2.coords)
