@@ -17,14 +17,14 @@ def test_point_line_orientation_setter():
 def test_set_line_orientation_vertical():
     p1 = Point(10, 20)
     p2 = Point(10, 30)
-    p1.set_line_orientation(p2)
-    assert p1.line_orientation == LineOrientation.VERT
+    p2.set_line_orientation(p1)
+    assert p2.line_orientation == LineOrientation.VERT
 
 def test_set_line_orientation_horizontal():
     p1 = Point(10, 20)
     p2 = Point(30, 20)
-    p1.set_line_orientation(p2)
-    assert p1.line_orientation == LineOrientation.HORZ
+    p2.set_line_orientation(p1)
+    assert p2.line_orientation == LineOrientation.HORZ
 
 def test_set_line_orientation_error():
     p1 = Point(10, 20)
