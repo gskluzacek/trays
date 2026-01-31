@@ -17,6 +17,14 @@ class Line(Generic[T]):
     def orientation(self) -> LineOrientation:
         return self.p2.line_orientation
 
+    def get_normalized_line(self) -> Line[T]:
+        if self.p1.coords > self.p2.coords:
+            # need to create new Point so the point p1 that is in the path doesn't get its orientation changed
+            p1, p2 = Point(*self.p2.coords), Point(*self.p1.coords)
+        else:
+            p1, p2 = self.p1, self.p2
+        return Line(p1, p2)
+
     def __repr__(self) -> str:
         return f"Line(p1={self.p1!r}, p2={self.p2!r}, type={self.orientation!r})"
 

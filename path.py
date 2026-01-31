@@ -13,8 +13,9 @@ T = TypeVar("T", bound=SupportsFloat)
 class _LinesView(Sequence[Line]):
     """Dynamic, list-like view over a Path's points that yields Line objects."""
 
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, normalize_ind: bool = False) -> None:
         self._path = path
+        self._normalize_ind = normalize_ind
 
     def __len__(self) -> int:
         return len(self._path.points)
@@ -38,6 +39,12 @@ class _LinesView(Sequence[Line]):
         pts = self._path.points
         p1 = pts[i]
         p2 = pts[(i + 1) % n]
+
+        if self._normalize_ind:
+            if p1.coords > p2.coords:
+                # need to create new Point so the point p1 that is in the path doesn't get its orientation changed
+                p1, p2 = Point(*p2.coords), Point(*p1.coords)
+
         # TODO: creating a new Line object, will initialize point p2's line orientation if it is LineOrientation.NONE
         return Line(p1, p2)
 
@@ -59,6 +66,10 @@ class Path(Generic[T]):
     @property
     def lines(self) -> Sequence[Line]:
         return _LinesView(self)
+
+    @property
+    def lines_normalized(self) -> Sequence[Line]:
+        return _LinesView(self, True)
 
     def finalize(self) -> None:
         # todo: implement any finalization logic if needed - must have all details within the path to do so
