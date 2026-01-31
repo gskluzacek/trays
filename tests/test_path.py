@@ -1,7 +1,7 @@
 import pytest
-from point import Point, PathOrientation, LineOrientation
-from path import Path, _LinesView
-from line import Line
+from tray.geometry.point import Point, PathOrientation, LineOrientation
+from tray.geometry.path import Path, _LinesView
+from tray.geometry.line import Line
 
 
 def test_path_init_empty():

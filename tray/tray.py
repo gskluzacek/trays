@@ -3,9 +3,9 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import TypeVar, SupportsFloat
 
-from point import Point
-from line import Line
-from path import Path
+from tray.geometry.point import Point
+from tray.geometry.line import Line
+from tray.geometry.path import Path
 from cyclic_n_tuples import cyclic_n_tuples
 
 T = TypeVar("T", bound=SupportsFloat)

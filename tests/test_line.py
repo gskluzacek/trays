@@ -1,6 +1,6 @@
 import pytest
-from point import Point, LineOrientation
-from line import Line
+from tray.geometry.point import Point, LineOrientation
+from tray.geometry.line import Line
 
 
 def test_line_init_horizontal():

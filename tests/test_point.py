@@ -1,5 +1,5 @@
 import pytest
-from point import Point, PathOrientation, LineOrientation
+from tray.geometry.point import Point, PathOrientation, LineOrientation
 
 
 def test_point_init():

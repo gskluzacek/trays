@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from point import LineOrientation
-from tray import Tray
+from tray.geometry.point import LineOrientation
+from tray.tray import Tray
 
 
 def main_1():

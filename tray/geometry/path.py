@@ -3,8 +3,8 @@ from __future__ import annotations
 from collections.abc import Iterator, Sequence
 from typing import Generic, SupportsFloat, TypeVar, overload
 
-from point import Point, PathOrientation
-from line import Line
+from tray.geometry.point import Point, PathOrientation
+from tray.geometry.line import Line
 from cyclic_n_tuples import fwd_n_tuple
 
 T = TypeVar("T", bound=SupportsFloat)
