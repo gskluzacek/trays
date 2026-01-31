@@ -1,7 +1,11 @@
 [project]
 name = "trays"
 version = "0.1.0"
-description = "Add your description here"
+description = "Backend application for creating laser cut trays"
+authors = [
+    { name = "Greg Skluzacek", email = "gskluzacek@gmail.com" }
+]
+readme = "README.md"
 requires-python = ">=3.13"
 dependencies = []
 
