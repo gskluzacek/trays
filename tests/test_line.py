@@ -81,3 +81,26 @@ def test_line_with_floats():
     p2 = Point(1.1, 5.5)
     line = Line(p1, p2)
     assert line.orientation == LineOrientation.VERT
+
+
+def test_line_get_normalized_line_already_normalized():
+    p1 = Point(0, 0)
+    p2 = Point(10, 0)
+    line = Line(p1, p2)
+    normalized = line.get_normalized_line()
+    assert normalized.p1 == p1
+    assert normalized.p2 == p2
+    assert normalized.orientation == LineOrientation.HORZ
+
+
+def test_line_get_normalized_line_needs_normalization():
+    p1 = Point(10, 0)
+    p2 = Point(0, 0)
+    line = Line(p1, p2)
+    normalized = line.get_normalized_line()
+    assert normalized.p1.coords == (0, 0)
+    assert normalized.p2.coords == (10, 0)
+    assert normalized.orientation == LineOrientation.HORZ
+    # Ensure original line is unchanged
+    assert line.p1.coords == (10, 0)
+    assert line.p2.coords == (0, 0)

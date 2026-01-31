@@ -172,3 +172,55 @@ def test_path_finalize():
     assert path.points[2].line_orientation == LineOrientation.VERT
     assert path.points[3].line_orientation == LineOrientation.HORZ
     assert path.points[0].line_orientation == LineOrientation.VERT
+
+
+def test_path_lines_normalized():
+    path = Path()
+    # (10, 0) -> (0, 0) needs normalization
+    # (0, 0) -> (0, 10) already normalized
+    # (0, 10) -> (10, 10) already normalized
+    # (10, 10) -> (10, 0) needs normalization
+    p1 = Point(10, 0)
+    p2 = Point(0, 0)
+    p3 = Point(0, 10)
+    p4 = Point(10, 10)
+    path.add_point(p1)
+    path.add_point(p2)
+    path.add_point(p3)
+    path.add_point(p4)
+
+    lines = list(path.lines_normalized)
+    assert len(lines) == 4
+
+    # Line 0: (10, 0) -> (0, 0) => Normalized to (0, 0) -> (10, 0)
+    assert lines[0].p1.coords == (0, 0)
+    assert lines[0].p2.coords == (10, 0)
+
+    # Line 1: (0, 0) -> (0, 10) => (0, 0) -> (0, 10)
+    assert lines[1].p1.coords == (0, 0)
+    assert lines[1].p2.coords == (0, 10)
+
+    # Line 2: (0, 10) -> (10, 10) => (0, 10) -> (10, 10)
+    assert lines[2].p1.coords == (0, 10)
+    assert lines[2].p2.coords == (10, 10)
+
+    # Line 3: (10, 10) -> (10, 0) => Normalized to (10, 0) -> (10, 10)
+    assert lines[3].p1.coords == (10, 0)
+    assert lines[3].p2.coords == (10, 10)
+
+
+def test_lines_view_normalized_getitem():
+    path = Path()
+    p1 = Point(10, 0)
+    p2 = Point(0, 0)
+    path.add_point(p1)
+    path.add_point(p2)
+
+    lv = _LinesView(path, normalize_ind=True)
+    line0 = lv[0]
+    assert line0.p1.coords == (0, 0)
+    assert line0.p2.coords == (10, 0)
+
+    line1 = lv[1]
+    assert line1.p1.coords == (0, 0)
+    assert line1.p2.coords == (10, 0)
