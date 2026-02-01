@@ -4,7 +4,7 @@ from collections.abc import Iterator, Sequence
 from typing import Generic, SupportsFloat, TypeVar
 from tray.geometry.point import Point, PathOrientation
 from tray.geometry.line import Line
-from cyclic_n_tuples import fwd_n_tuple
+from cyclic_n_tuples import fwd_n_tuple, fwd_pair, cyclic_n_tuples
 
 T = TypeVar("T", bound=SupportsFloat)
 
@@ -21,13 +21,7 @@ class Path(Generic[T]):
 
     def finalize(self) -> None:
         self.lines = []
-        n = len(self.points)
-        if n < 2:
-            return
-
-        for i in range(n):
-            p1 = self.points[i]
-            p2 = self.points[(i + 1) % n]
+        for p1, p2 in cyclic_n_tuples(self.points, n=2, offset=0):
             self.lines.append(Line(p1, p2))
 
     @property
