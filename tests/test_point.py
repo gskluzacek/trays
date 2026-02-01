@@ -1,41 +1,11 @@
 import pytest
-from tray.geometry.point import Point, PathOrientation, LineOrientation
+from tray.geometry.point import Point, PathOrientation
 
 
 def test_point_init():
     p = Point(10, 20)
     assert p.x == 10
     assert p.y == 20
-    assert p.line_orientation == LineOrientation.NONE
-
-
-def test_point_line_orientation_setter():
-    p = Point(0, 0)
-    p.line_orientation = LineOrientation.VERT
-    assert p.line_orientation == LineOrientation.VERT
-    p.line_orientation = LineOrientation.HORZ
-    assert p.line_orientation == LineOrientation.HORZ
-
-
-def test_set_line_orientation_vertical():
-    p1 = Point(10, 20)
-    p2 = Point(10, 30)
-    p2.set_line_orientation(p1)
-    assert p2.line_orientation == LineOrientation.VERT
-
-
-def test_set_line_orientation_horizontal():
-    p1 = Point(10, 20)
-    p2 = Point(30, 20)
-    p2.set_line_orientation(p1)
-    assert p2.line_orientation == LineOrientation.HORZ
-
-
-def test_set_line_orientation_error():
-    p1 = Point(10, 20)
-    p2 = Point(30, 40)
-    with pytest.raises(ValueError, match="cannot set line orientation for points that are not collinear"):
-        p1.set_line_orientation(p2)
 
 
 def test_point_repr():

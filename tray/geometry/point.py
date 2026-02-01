@@ -13,34 +13,10 @@ class PathOrientation(Enum):
     NONE = "none"
 
 
-class LineOrientation(Enum):
-    VERT = "vertical"
-    HORZ = "horizontal"
-    NONE = "none"
-
-
 class Point(Generic[T]):
     def __init__(self, x: T, y: T) -> None:
         self.x = x
         self.y = y
-        # these private attributes are used at the line level and are accessed via the line's property not the point's property
-        self._line_orientation = LineOrientation.NONE
-
-    @property
-    def line_orientation(self) -> LineOrientation:
-        return self._line_orientation
-
-    @line_orientation.setter
-    def line_orientation(self, value: LineOrientation) -> None:
-        self._line_orientation = value
-
-    def set_line_orientation(self, other_point: Point) -> None:
-        if other_point.x == self.x:
-            self.line_orientation = LineOrientation.VERT
-        elif other_point.y == self.y:
-            self.line_orientation = LineOrientation.HORZ
-        else:
-            raise ValueError("cannot set line orientation for points that are not collinear")
 
     def __repr__(self) -> str:
         return f"Point(x={self.x}, y={self.y})"

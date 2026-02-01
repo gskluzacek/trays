@@ -1,6 +1,7 @@
 import pytest
-from tray.geometry.point import Point, PathOrientation, LineOrientation
-from tray.geometry.path import Path, _LinesView
+from tray.geometry.point import Point, PathOrientation
+from tray.geometry.line import LineOrientation
+from tray.geometry.path import Path
 from tray.geometry.line import Line
 
 
@@ -34,15 +35,17 @@ def test_path_points_as_tuples():
     assert tuples == [(1, 2), (10, 2)]
 
 
-def test_lines_view_len():
+def test_path_lines_len():
     path = Path()
     path.add_point(Point(0, 0))
     path.add_point(Point(10, 0))
     path.add_point(Point(10, 10))
-    assert len(path.lines) == 3
+    path.add_point(Point(0, 10))  # added to make it a rectangle
+    path.finalize()
+    assert len(path.lines) == 4
 
 
-def test_lines_view_getitem_int():
+def test_path_lines_getitem():
     path = Path()
     p1 = Point(0, 0)
     p2 = Point(10, 0)
@@ -52,6 +55,7 @@ def test_lines_view_getitem_int():
     path.add_point(p2)
     path.add_point(p3)
     path.add_point(p4)
+    path.finalize()
 
     line0 = path.lines[0]
     assert line0.p1 == p1
@@ -69,38 +73,14 @@ def test_lines_view_getitem_int():
     assert line3.p1 == p4
     assert line3.p2 == p1
 
-    # Test modulo wrapping
-    line4 = path.lines[4]
-    assert line4.p1 == p1
-    assert line4.p2 == p2
 
-
-def test_lines_view_getitem_empty_raises():
-    path = Path()
-    with pytest.raises(IndexError, match="path.lines is empty"):
-        _ = path.lines[0]
-
-
-def test_lines_view_slice():
+def test_path_lines_iter():
     path = Path()
     path.add_point(Point(0, 0))
     path.add_point(Point(10, 0))
     path.add_point(Point(10, 10))
     path.add_point(Point(0, 10))
-
-    lines = path.lines[0:2]
-    assert isinstance(lines, list)
-    assert len(lines) == 2
-    assert lines[0].p1.coords == (0, 0)
-    assert lines[1].p1.coords == (10, 0)
-
-
-def test_lines_view_iter():
-    path = Path()
-    path.add_point(Point(0, 0))
-    path.add_point(Point(10, 0))
-    path.add_point(Point(10, 10))
-    path.add_point(Point(0, 10))
+    path.finalize()
 
     lines = list(path.lines)
     assert len(lines) == 4
@@ -164,63 +144,12 @@ def test_path_finalize():
     path.add_point(Point(10, 0))
     path.add_point(Point(10, 10))
     path.add_point(Point(0, 10))
-    # Finalize currently does nothing but iterate over lines.
-    # It shouldn't raise any errors for this rectangle.
     path.finalize()
-    # verify that line orientations were set on points (via Line creation in _LinesView)
-    assert path.points[1].line_orientation == LineOrientation.HORZ
-    assert path.points[2].line_orientation == LineOrientation.VERT
-    assert path.points[3].line_orientation == LineOrientation.HORZ
-    assert path.points[0].line_orientation == LineOrientation.VERT
+    # verify that line orientations are correct for the lines in the path
+    assert len(path.lines) == 4
+    assert path.lines[0].orientation == LineOrientation.HORZ
+    assert path.lines[1].orientation == LineOrientation.VERT
+    assert path.lines[2].orientation == LineOrientation.HORZ
+    assert path.lines[3].orientation == LineOrientation.VERT
 
 
-def test_path_lines_normalized():
-    path = Path()
-    # (10, 0) -> (0, 0) needs normalization
-    # (0, 0) -> (0, 10) already normalized
-    # (0, 10) -> (10, 10) already normalized
-    # (10, 10) -> (10, 0) needs normalization
-    p1 = Point(10, 0)
-    p2 = Point(0, 0)
-    p3 = Point(0, 10)
-    p4 = Point(10, 10)
-    path.add_point(p1)
-    path.add_point(p2)
-    path.add_point(p3)
-    path.add_point(p4)
-
-    lines = list(path.lines_normalized)
-    assert len(lines) == 4
-
-    # Line 0: (10, 0) -> (0, 0) => Normalized to (0, 0) -> (10, 0)
-    assert lines[0].p1.coords == (0, 0)
-    assert lines[0].p2.coords == (10, 0)
-
-    # Line 1: (0, 0) -> (0, 10) => (0, 0) -> (0, 10)
-    assert lines[1].p1.coords == (0, 0)
-    assert lines[1].p2.coords == (0, 10)
-
-    # Line 2: (0, 10) -> (10, 10) => (0, 10) -> (10, 10)
-    assert lines[2].p1.coords == (0, 10)
-    assert lines[2].p2.coords == (10, 10)
-
-    # Line 3: (10, 10) -> (10, 0) => Normalized to (10, 0) -> (10, 10)
-    assert lines[3].p1.coords == (10, 0)
-    assert lines[3].p2.coords == (10, 10)
-
-
-def test_lines_view_normalized_getitem():
-    path = Path()
-    p1 = Point(10, 0)
-    p2 = Point(0, 0)
-    path.add_point(p1)
-    path.add_point(p2)
-
-    lv = _LinesView(path, normalize_ind=True)
-    line0 = lv[0]
-    assert line0.p1.coords == (0, 0)
-    assert line0.p2.coords == (10, 0)
-
-    line1 = lv[1]
-    assert line1.p1.coords == (0, 0)
-    assert line1.p2.coords == (10, 0)

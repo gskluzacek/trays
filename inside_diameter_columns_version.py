@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from tray.geometry.point import LineOrientation
+from tray.geometry.line import LineOrientation
 from tray.tray import Tray
 
 
@@ -48,7 +48,8 @@ def main_1():
     print("path lines")
     print("-" * 100)
     for i, index_path in enumerate(tray.index_paths):
-        for j, line in enumerate(index_path.lines_normalized):
+        for j, line in enumerate(index_path.lines):
+            line = line.get_normalized_line()
             if line.orientation == LineOrientation.HORZ:
                 vector = f"horz: {line.p2.x - line.p1.x}"
             else:

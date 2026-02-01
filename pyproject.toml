@@ -9,7 +9,10 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = []
 
-[project.optional-dependencies]
+# uv sync
+# uv add --group dev pytest
+
+[dependency-groups]
 dev = [
     "ruff>=0.14.14",
     "pytest>=9.0.2",
