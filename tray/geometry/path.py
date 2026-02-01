@@ -28,7 +28,7 @@ class Path(Generic[T]):
         for i in range(n):
             p1 = self.points[i]
             p2 = self.points[(i + 1) % n]
-            self.lines.append(Line[T](p1, p2))
+            self.lines.append(Line(p1, p2))
 
     @property
     def points_as_tuples(self) -> Iterator[tuple[T, T]]:
