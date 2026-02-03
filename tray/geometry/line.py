@@ -59,7 +59,7 @@ class Line(Generic[T]):
 
     @functools.cached_property
     def normalize(self) -> tuple[Point[T], Point[T]]:
-        if self.p1.coords > self.p2.coords:
+        if self.p1 > self.p2:
             return self.p2, self.p1
         return self.p1, self.p2
 
