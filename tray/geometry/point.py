@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Generic, SupportsFloat, TypeVar
+from functools import total_ordering
+from typing import Generic, SupportsFloat, TypeAlias, TypeVar, overload, cast
+
 
 T = TypeVar("T", bound=SupportsFloat)
+PointLike: TypeAlias = "Point[T] | tuple[T, T]"
 
 
 class PathOrientation(Enum):
@@ -13,6 +16,7 @@ class PathOrientation(Enum):
     NONE = "none"
 
 
+@total_ordering
 class Point(Generic[T]):
     def __init__(self, x: T, y: T) -> None:
         self.x = x
@@ -23,6 +27,48 @@ class Point(Generic[T]):
 
     def __str__(self) -> str:
         return f"[{self.x}, {self.y}]"
+
+    @staticmethod
+    def _validate_pair_xy(ax: T, ay: T, bx: T, by: T) -> None:
+        # Allowed: identical OR share x OR share y
+        # Disallowed: both coordinates differ
+        if ax != bx and ay != by:
+            raise ValueError("Unsupported comparison: points must be identical or share x or share y.")
+
+    @overload
+    @staticmethod
+    def _coerce_xy(other: Point[T]) -> tuple[T, T]: ...
+    @overload
+    @staticmethod
+    def _coerce_xy(other: tuple[T, T]) -> tuple[T, T]: ...
+    @overload
+    @staticmethod
+    def _coerce_xy(other: object) -> tuple[T, T] | None: ...
+
+    @staticmethod
+    def _coerce_xy(other: object) -> tuple[T, T] | None:
+        if isinstance(other, Point):
+            return cast(tuple[T, T], (other.x, other.y))
+        if isinstance(other, tuple) and len(other) == 2:
+            x, y = other
+            return cast(tuple[T, T], (x, y))
+        return None
+
+    def __eq__(self, other: object) -> bool:
+        other_xy = self._coerce_xy(other)
+        if other_xy is None:
+            return NotImplemented
+        ox, oy = other_xy
+        self._validate_pair_xy(self.x, self.y, ox, oy)
+        return (self.x, self.y) == (ox, oy)
+
+    def __lt__(self, other: object) -> bool:
+        other_xy = self._coerce_xy(other)
+        if other_xy is None:
+            return NotImplemented
+        ox, oy = other_xy
+        self._validate_pair_xy(self.x, self.y, ox, oy)
+        return (self.x, self.y) < (ox, oy)
 
     @property
     def coords(self) -> tuple[T, T]:

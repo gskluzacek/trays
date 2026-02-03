@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator
 from typing import Generic, SupportsFloat, TypeVar
 from tray.geometry.point import Point, PathOrientation
-from tray.geometry.line import Line
+from tray.geometry.line import Line, LineOrientation
 from cyclic_n_tuples import fwd_n_tuple, fwd_pair, cyclic_n_tuples
 
 T = TypeVar("T", bound=SupportsFloat)
@@ -27,6 +27,14 @@ class Path(Generic[T]):
     @property
     def points_as_tuples(self) -> Iterator[tuple[T, T]]:
         return map(lambda pt: (pt.x, pt.y), self.points)
+
+    @property
+    def horizontal(self) -> Iterator[Line[T]]:
+        return Line.of_orientation(self.lines, LineOrientation.HORZ)
+
+    @property
+    def vertical(self) -> Iterator[Line[T]]:
+        return Line.of_orientation(self.lines, LineOrientation.VERT)
 
     def add_point(self, point: Point[T]) -> None:
         self.points.append(point)

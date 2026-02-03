@@ -51,3 +51,66 @@ def test_point_with_floats():
     assert p.x == 1.5
     assert p.y == 2.5
     assert p.coords == (1.5, 2.5)
+    
+    
+def test_point_equality():
+    p1 = Point(1, 2)
+    p2 = Point(1, 2)
+    p3 = Point(1, 5)
+    p4 = Point(5, 2)
+    
+    assert p1 == p2
+    assert p1 != p3
+    assert p1 != p4
+    
+    # Comparison with tuple
+    assert p1 == (1, 2)
+    assert (1, 2) == p1
+    assert p1 != (1, 5)
+    
+    # Comparison with incompatible type
+    assert p1 != "string"
+    assert p1 != (1, 2, 3)  # Incorrect tuple length
+
+
+def test_point_ordering():
+    p1 = Point(1, 2)
+    p2 = Point(1, 5)
+    p3 = Point(5, 2)
+    
+    # Same x, different y
+    assert p1 < p2
+    assert p2 > p1
+    assert p1 <= p2
+    assert p2 >= p1
+    
+    # Same y, different x
+    assert p1 < p3
+    assert p3 > p1
+    assert p1 <= p3
+    assert p3 >= p1
+    
+    # Equality ordering
+    p1_copy = Point(1, 2)
+    assert p1 <= p1_copy
+    assert p1 >= p1_copy
+
+
+def test_point_invalid_comparison():
+    p1 = Point(1, 2)
+    p2 = Point(5, 5)  # Neither x nor y match
+    
+    with pytest.raises(ValueError, match="Unsupported comparison"):
+        _ = p1 == p2
+        
+    with pytest.raises(ValueError, match="Unsupported comparison"):
+        _ = p1 < p2
+        
+    with pytest.raises(ValueError, match="Unsupported comparison"):
+        _ = p1 <= p2
+
+
+def test_point_ordering_incompatible_type():
+    p1 = Point(1, 2)
+    with pytest.raises(TypeError):
+        _ = p1 < 10

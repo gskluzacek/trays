@@ -237,3 +237,17 @@ This use case is found when:
 4. corner intersections between 2 walls use finger / space joints
 5. tee intersections between 2 walls use tab / slot joints
 6. cross intersections between 2 walls use dual slot joints
+
+## classification of walls
+
+walls can be classified into 3 categories:
+
+* exterior walls
+* interior walls
+* combination walls
+
+### use cases
+
+1. both the 1st & 2nd points of the wall's line are contained within a path's line - inclusive of the start and end
+   points of the path's line.
+2. the first point of the wall's line 
