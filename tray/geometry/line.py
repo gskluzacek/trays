@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import functools
-from enum import Enum
+from enum import Enum, IntEnum
 from collections.abc import Iterator, Sequence
 from typing import Generic, SupportsFloat, TypeVar
 from tray.geometry.point import Point
@@ -13,6 +13,23 @@ class LineOrientation(Enum):
     VERT = "vertical"
     HORZ = "horizontal"
     NONE = "none"
+
+
+class WallType(IntEnum):
+    def __new__(cls, value: int, label: str):
+        obj = int.__new__(cls, value)  # create the enum member as an int
+        obj._value_ = value
+        obj._label_ = label
+        return obj
+
+    NONE = (0, "none")
+    INTERIOR = (1, "interior")
+    EXTERIOR = (2, "exterior")
+    COMBO = (3, "combo")
+
+    @property
+    def label(self) -> str:
+        return self._label_
 
 
 class Line(Generic[T]):
@@ -68,3 +85,50 @@ class Line(Generic[T]):
 
     def __str__(self) -> str:
         return f"[{self.p1}, {self.p2}, {self.orientation}]"
+
+    @staticmethod
+    def classify_wall(wall_line: Line[T], path_line: Line[T], orientation: LineOrientation) -> WallType:
+        (w1, w2) = wall_line.normalize
+        (p1, p2) = path_line.normalize
+
+        if orientation == LineOrientation.HORZ:
+            w1, w2 = w1.x, w2.x
+            p1, p2 = p1.x, p2.x
+        elif orientation == LineOrientation.VERT:
+            w1, w2 = w1.y, w2.y
+            p1, p2 = p1.y, p2.y
+        else:
+            raise ValueError("orientation must be either vertical or horizontal")
+
+        col = wall_line.is_collinear(path_line)
+
+        match col:
+            case False:
+                return WallType.INTERIOR
+
+            # w completely below p OR completely above p (including touching at endpoints)
+            case True if (w2 <= p1) or (w1 >= p2):
+                return WallType.INTERIOR
+
+            # partial overlap on one side -> "combo"
+            case True if (w1 < p1 < w2 < p2) or (p1 < w1 < p2 < w2):
+                return WallType.COMBO
+
+            case True if (w1 == p1 and w2 > p2) or (w2 == p2 and w1 < p1):
+                return WallType.COMBO
+
+            case True if w1 < p1 and w2 > p2:
+                return WallType.COMBO
+
+            # w within p or equal -> "exterior" per your original mapping
+            case True if (w1 == p1 and w2 < p2) or (w2 == p2 and w1 > p1):
+                return WallType.EXTERIOR
+
+            case True if p1 < w1 and w2 < p2:
+                return WallType.EXTERIOR
+
+            case True if w1 == p1 and w2 == p2:
+                return WallType.EXTERIOR
+
+            case _:
+                raise ValueError("Unhandled collinear configuration")

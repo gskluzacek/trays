@@ -4,7 +4,7 @@ from collections.abc import Iterator
 from typing import Generic, SupportsFloat, TypeVar
 from tray.geometry.point import Point, PathOrientation
 from tray.geometry.line import Line, LineOrientation
-from cyclic_n_tuples import fwd_n_tuple, fwd_pair, cyclic_n_tuples
+from cyclic_n_tuples import fwd_n_tuple, cyclic_n_tuples
 
 T = TypeVar("T", bound=SupportsFloat)
 
@@ -17,6 +17,7 @@ class Path(Generic[T]):
     ) -> None:
         self.points: list[Point[T]] = [start_point] if start_point else []
         self.orientation: PathOrientation = orientation
+        # NOTE: Path.lines does not get populated until finalize() is called.
         self.lines: list[Line[T]] = []
 
     def finalize(self) -> None:

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from tray.geometry.line import LineOrientation
 from tray.tray import Tray
 
 
@@ -29,8 +28,10 @@ def main_1():
         tray.auto_generate_exterior_base_walls()
     else:
         tray.add_wall((0, 0), (2, 0))
-        tray.add_wall((2, 0), (2, 2))
-        tray.add_wall((4, 2), (4, 0))
+        # tray.add_wall((2, 0), (2, 2))
+        tray.add_wall((2, 0), (2, 4))
+        # tray.add_wall((4, 2), (4, 0))
+        tray.add_wall((4, 4), (4, 0))
         tray.add_wall((4, 0), (6, 0))
         tray.add_wall((6, 0), (6, 4))
         tray.add_wall((4, 4), (2, 4))
@@ -47,25 +48,21 @@ def main_1():
     print("-" * 100)
     print("path lines")
     print("-" * 100)
+
     for i, index_path in enumerate(tray.index_paths):
         for j, line in enumerate(index_path.lines):
-            line = line.get_normalized_line()
-            if line.orientation == LineOrientation.HORZ:
-                vector = f"horz: {line.p2.x - line.p1.x}"
-            else:
-                vector = f"vert: {line.p2.y - line.p1.y}"
-            print(f"[{i} {j}]: {line} -> {vector}")
+            print(f"[{i} {j}]: {line}")
 
     print("-" * 100)
     print("wall lines")
     print("-" * 100)
+
     for i, line in enumerate(tray.index_walls):
-        nline = line.get_normalized_line()
-        if nline.orientation == LineOrientation.HORZ:
-            vector = f"horz: {nline.p2.x - nline.p1.x}"
-        else:
-            vector = f"vert: {nline.p2.y - nline.p1.y}"
-        print(f"[{i}]: {nline} -> {vector}")
+        print(f"[{i}]: {line}")
+
+    print("--" * 100)
+
+    tray.classify_index_walls()
 
     # tray.calc_center_to_center_dims()
     # tray.calc_center_to_center_points()

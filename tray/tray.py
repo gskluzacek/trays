@@ -4,7 +4,7 @@ from collections.abc import Iterator
 from typing import TypeVar, SupportsFloat
 
 from tray.geometry.point import Point
-from tray.geometry.line import Line
+from tray.geometry.line import Line, LineOrientation, WallType
 from tray.geometry.path import Path
 from cyclic_n_tuples import cyclic_n_tuples
 
@@ -32,6 +32,33 @@ class Tray:
     @property
     def ndx_walls_as_tuples(self) -> Iterator[tuple[T, T, T, T]]:
         return map(lambda wall: (wall.p1.x, wall.p1.y, wall.p2.x, wall.p2.y), self.index_walls)
+
+    def _classify_index_walls(self, orientation: LineOrientation):
+        for wall in Line.of_orientation(self.index_walls, orientation):
+            wall_types = []
+            wall_type = WallType.NONE
+
+            for path in self.index_paths:
+                path_orientation = path.horizontal if orientation == LineOrientation.HORZ else path.vertical
+
+                for line in path_orientation:
+                    wall_type = Line.classify_wall(wall, line, orientation)
+                    wall_types.append(wall_type)
+
+            if wall_type == WallType.NONE:
+                raise ValueError("no wall type found for this wall")
+            elif WallType.COMBO in wall_types and WallType.EXTERIOR in wall_types:
+                raise ValueError("wall type cannot be both combo and exterior")
+            elif sum(v == WallType.EXTERIOR for v in wall_types) > 1:
+                raise ValueError("more than one exterior wall type found for this wall")
+            else:
+                wall_type = max(wall_types)
+
+            print(f"{wall} | wall_type: {wall_type.label}")
+
+    def classify_index_walls(self):
+        self._classify_index_walls(LineOrientation.HORZ)
+        self._classify_index_walls(LineOrientation.VERT)
 
     def calc_center_to_center_dims(self):
         self.center_to_center_dim_cols = list(
