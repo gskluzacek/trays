@@ -1,3 +1,4 @@
+import pytest
 from tray.tray import Tray
 from tray.geometry.point import PathOrientation
 
@@ -133,3 +134,254 @@ def test_ndx_walls_as_tuples():
 
     tuples = list(tray.ndx_walls_as_tuples)
     assert tuples == [(0, 0, 1, 0)]
+
+
+def test_start_base_validation():
+    tray = Tray(1.0, [10.0, 10.0], [10.0, 10.0])
+    with pytest.raises(ValueError, match="the index starting point must be within the bounds"):
+        tray.start_base(3, 0)
+    with pytest.raises(ValueError, match="the index starting point must be within the bounds"):
+        tray.start_base(0, 3)
+    with pytest.raises(ValueError, match="the index starting point must be within the bounds"):
+        tray.start_base(-1, 0)
+
+
+def test_extend_base_validation():
+    tray = Tray(1.0, [10.0, 10.0], [10.0, 10.0])
+    tray.start_base(0, 0)
+
+    with pytest.raises(ValueError, match="the index point being added must be within the bounds"):
+        tray.extend_base(3, 0)
+
+    with pytest.raises(ValueError, match="cannot add the same point twice"):
+        tray.extend_base(0, 0)
+
+    with pytest.raises(ValueError, match="the point being added must have either the same x or y coordinate"):
+        tray.extend_base(1, 1)
+
+    # Valid extension
+    tray.extend_base(1, 0)
+
+
+def test_end_base_validation():
+    tray = Tray(1.0, [10.0, 10.0], [10.0, 10.0])
+    tray.start_base(0, 0)
+
+    with pytest.raises(ValueError, match="the number of points in the base path must be at least 4"):
+        tray.end_base()
+
+    tray.extend_base(2, 0)
+    tray.extend_base(2, 2)
+    # 3 points total now.
+
+    with pytest.raises(ValueError, match="the number of points in the base path must be at least 4"):
+        tray.end_base()
+
+    tray.extend_base(0, 2)
+    # 4 points, but not even? No, 4 is even.
+    # Actually, current implementation says:
+    # if len(self.index_paths[-1].points) % 2 == 1:
+    #     raise ValueError("the number of points in the base path must be even")
+    # 4 is even.
+
+    # But wait, it checks boundaries:
+    # if min_x != 0 or max_x != len(self.inside_dim_cols) or min_y != 0 or max_y != len(self.inside_dim_rows):
+    #     raise ValueError("the base path must have points on the boundaries...")
+
+    # For 2x2 grid, max_x = 2, max_y = 2.
+    # Our points: (0,0), (2,0), (2,2), (0,2).
+    # min_x=0, max_x=2, min_y=0, max_y=2. Should pass boundaries.
+
+    tray.end_base()  # Should pass.
+
+    # Test odd number of points (if possible given orthogonality)
+    # (0,0) -> (2,0) -> (2,1) -> (1,1) -> (1,2) -> (0,2) -> 6 points.
+    # To get odd number, we'd need to break orthogonality or have same point.
+    # Actually, if we add (0,0) at the end, Path.add_point will have it, but Tray.end_base doesn't add the closing point.
+    # Path.finalize() adds the closing point if it's not already there.
+    # Tray.end_base calls self.index_paths[-1].finalize()
+
+    # Let's check overlapping lines in base path
+    tray2 = Tray(1.0, [10.0, 10.0], [10.0, 10.0])
+    tray2.start_base(0, 0)
+    tray2.extend_base(2, 0)
+    tray2.extend_base(2, 2)
+    tray2.extend_base(0, 2)
+    tray2.extend_base(0, 1)
+    tray2.extend_base(2, 1) # This line (0,1)->(2,1) overlaps with nothing?
+    # Wait, (0,1)->(2,1) crosses (2,0)->(2,2)? No.
+    # Let's make it overlap: (0,0)->(2,0) and then later (2,0)->(0,0)
+    # But Tray.end_base doesn't allow consecutive lines with same orientation.
+
+    # (0,0) -> (2,0) -> (2,2) -> (0,2) -> (0,0) -- this is what finalize does.
+    # Overlap: (0,0) -> (2,0) -> (2,2) -> (1,2) -> (1,0) -> (0,0) -> (0,2) ... hard to do with orthogonality.
+
+    # How about (0,0) -> (2,0) -> (2,2) -> (0,2) -> (0,1) -> (2,1) -> (2,0) ...
+    # (0,1) -> (2,1) and (2,1) -> (2,0) and (2,0) -> (0,0) ...
+    # Let's try to create a "C" shape that overlaps itself.
+    # (0,0) -> (2,0) -> (2,2) -> (0,2) -> (0,1) -> (1,1) -> (1,0) -> (0,0)
+    tray3 = Tray(1.0, [10.0, 10.0, 10.0], [10.0, 10.0, 10.0])
+    tray3.start_base(0, 0)
+    tray3.extend_base(3, 0)
+    tray3.extend_base(3, 3)
+    tray3.extend_base(0, 3)
+    tray3.extend_base(0, 1)
+    tray3.extend_base(2, 1)
+    tray3.extend_base(2, 2)
+    tray3.extend_base(0, 2) # (0,2) is between (0,3) and (0,1)
+    # Lines: (0,0)-(3,0), (3,0)-(3,3), (3,3)-(0,3), (0,3)-(0,1), (0,1)-(2,1), (2,1)-(2,2), (2,2)-(0,2), (0,2)-(0,0)
+    # (0,3)-(0,1) and (0,2)-(0,0) overlap!
+    with pytest.raises(ValueError, match="lines within the base path cannot overlap"):
+        tray3.end_base()
+
+
+def test_end_base_consecutive_orientation_validation():
+    tray = Tray(1.0, [10.0, 10.0], [10.0, 10.0])
+    tray.start_base(0, 0)
+    # We need to bypass extend_base validation to test end_base's check for consecutive lines with same orientation
+    # Actually Tray.extend_base already checks for orthogonality, but it doesn't check if it's the SAME orientation
+    # as the previous line.
+    # Wait, Tray.extend_base:
+    # if not index_pt.is_orthogonal(prev_index_pt): ...
+    # Path.add_point doesn't check orientation.
+    # Let's see if we can add (0,0) -> (1,0) -> (2,0).
+    # (1,0) is orthogonal to (0,0).
+    # (2,0) is orthogonal to (1,0).
+    # This is allowed by extend_base!
+    tray.start_base(0, 0)
+    tray.extend_base(1, 0)
+    tray.extend_base(2, 0) # Allowed by extend_base
+    tray.extend_base(2, 1)
+    tray.extend_base(2, 2)
+    tray.extend_base(0, 2)
+    with pytest.raises(ValueError, match="consecutive lines in the base path cannot have the same orientation"):
+        tray.end_base()
+
+
+def test_end_base_odd_points():
+    # It's hard to get an odd number of points with orthogonality and end_base not adding closing point
+    # unless we manually manipulate the path points (which we shouldn't)
+    # or if start point == end point but they are consecutive? (already blocked by extend_base)
+    # Wait, Tray.end_base checks len(self.index_paths[-1].points) % 2 == 1
+    # If I have (0,0) -> (1,0) -> (1,1) -> (2,1) -> (2,2) -> (0,2) -- 6 points.
+    # To get 5 points: (0,0) -> (1,0) -> (1,1) -> (0,1) -> (0,0) -- but wait, extend_base blocks (0,0) twice if consecutive.
+    # But it doesn't block (0,0) if it's NOT consecutive.
+    tray = Tray(1.0, [10.0, 10.0], [10.0, 10.0])
+    tray.start_base(0, 0)
+    tray.extend_base(1, 0)
+    tray.extend_base(1, 1)
+    tray.extend_base(0, 1)
+    tray.extend_base(0, 0) # 5 points
+    with pytest.raises(ValueError, match="the number of points in the base path must be even"):
+        tray.end_base()
+
+
+def test_add_wall_validation():
+    tray = Tray(1.0, [10.0], [10.0])
+    with pytest.raises(ValueError, match="the line's starting and ending index points must be within the bounds"):
+        tray.add_wall((0, 0), (2, 0))
+    with pytest.raises(ValueError, match="the line's starting and ending index points must be within the bounds"):
+        tray.add_wall((-1, 0), (1, 0))
+
+
+def test_finalize_walls_validation():
+    tray = Tray(1.0, [10.0, 10.0], [10.0, 10.0])
+    tray.add_wall((0, 1), (2, 1))
+    tray.add_wall((1, 1), (1, 2)) # Not overlapping, just intersecting.
+    tray.finalize_walls() # Should pass.
+
+    tray.add_wall((0, 1), (1, 1)) # Overlaps with (0,1)-(2,1)
+    with pytest.raises(ValueError, match="Cannot have overlapping walls"):
+        tray.finalize_walls()
+
+
+def test_classify_index_walls_errors():
+    material_thickness = 5.0
+    inside_dim_cols = [100.0, 100.0, 100.0]
+    inside_dim_rows = [100.0, 100.0, 100.0]
+
+    # 1. No wall type found (no paths)
+    tray_no_path = Tray(material_thickness, inside_dim_cols, inside_dim_rows)
+    tray_no_path.add_wall((0, 0), (1, 0))
+    with pytest.raises(ValueError, match="no wall type found for this wall"):
+        tray_no_path.classify_index_walls()
+
+    # 2. Wall type cannot be both combo and exterior
+    tray_conflict = Tray(material_thickness, inside_dim_cols, inside_dim_rows)
+    # Path 1: Boundary path
+    tray_conflict.start_base(0, 0)
+    tray_conflict.extend_base(3, 0)
+    tray_conflict.extend_base(3, 3)
+    tray_conflict.extend_base(0, 3)
+    tray_conflict.end_base()
+    # Path 2: Segment (0,0)-(1,0)
+    tray_conflict.start_base(0, 0)
+    tray_conflict.extend_base(1, 0)
+    tray_conflict.extend_base(1, 1)
+    tray_conflict.extend_base(3, 1)
+    tray_conflict.extend_base(3, 3)
+    tray_conflict.extend_base(0, 3)
+    tray_conflict.end_base()
+    # Wall (0,0)-(2,0)
+    # Against Path 1 (0,0)-(3,0): EXTERIOR (within)
+    # Against Path 2 (0,0)-(1,0): COMBO (contains)
+    tray_conflict.add_wall((0, 0), (2, 0))
+    with pytest.raises(ValueError, match="wall type cannot be both combo and exterior"):
+        tray_conflict.classify_index_walls()
+
+    # 3. More than one exterior wall type found
+    tray_multi_ext = Tray(material_thickness, inside_dim_cols, inside_dim_rows)
+    tray_multi_ext.start_base(0, 0)
+    tray_multi_ext.extend_base(3, 0)
+    tray_multi_ext.extend_base(3, 3)
+    tray_multi_ext.extend_base(0, 3)
+    tray_multi_ext.end_base()
+    
+    tray_multi_ext.start_base(0, 0)
+    tray_multi_ext.extend_base(3, 0)
+    tray_multi_ext.extend_base(3, 1)
+    tray_multi_ext.extend_base(1, 1)
+    tray_multi_ext.extend_base(1, 3)
+    tray_multi_ext.extend_base(0, 3)
+    tray_multi_ext.end_base()
+    
+    tray_multi_ext.add_wall((1, 0), (2, 0))
+    with pytest.raises(ValueError, match="more than one exterior wall type found for this wall"):
+        tray_multi_ext.classify_index_walls()
+
+
+def test_classify_index_walls_max_logic(capsys):
+    material_thickness = 5.0
+    inside_dim_cols = [100.0, 100.0, 100.0]
+    inside_dim_rows = [100.0, 100.0, 100.0]
+
+    tray = Tray(material_thickness, inside_dim_cols, inside_dim_rows)
+    # Path: (0,0)-(1,0)-(1,1)-(3,1)-(3,3)-(0,3)-(0,0)
+    tray.start_base(0, 0)
+    tray.extend_base(1, 0)
+    tray.extend_base(1, 1)
+    tray.extend_base(3, 1)
+    tray.extend_base(3, 3)
+    tray.extend_base(0, 3)
+    tray.end_base()
+
+    # Wall (0,0)-(2,0) HORZ.
+    # Against (0,0)-(1,0): COMBO (contains)
+    # Max(COMBO, INTERIOR...) -> COMBO
+    tray.add_wall((0, 0), (2, 0))
+    tray.classify_index_walls()
+    captured = capsys.readouterr()
+    assert "wall_type: combo" in captured.out
+
+
+def test_end_base_boundary_validation():
+    # max_x = 2, max_y = 2
+    tray = Tray(1.0, [10.0, 10.0], [10.0, 10.0])
+    tray.start_base(0, 0)
+    tray.extend_base(1, 0)
+    tray.extend_base(1, 1)
+    tray.extend_base(0, 1)
+    # min_x=0, max_x=1, min_y=0, max_y=1
+    # max_x should be 2, max_y should be 2
+    with pytest.raises(ValueError, match="the base path must have points on the boundaries"):
+        tray.end_base()

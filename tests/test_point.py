@@ -114,3 +114,15 @@ def test_point_ordering_incompatible_type():
     p1 = Point(1, 2)
     with pytest.raises(TypeError):
         _ = p1 < 10
+
+
+def test_is_orthogonal():
+    p1 = Point(0, 0)
+    p2 = Point(10, 0)
+    p3 = Point(0, 10)
+    p4 = Point(10, 10)
+
+    assert p1.is_orthogonal(p2) is True
+    assert p1.is_orthogonal(p3) is True
+    assert p1.is_orthogonal(p4) is False
+    assert p1.is_orthogonal(p1) is False
