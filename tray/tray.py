@@ -6,7 +6,8 @@ from itertools import combinations
 
 
 from tray.geometry.point import Point
-from tray.geometry.line import Line, LineOrientation, WallType
+from tray.geometry.line import Line, LineOrientation
+from tray.geometry.wall_line import WallLine, WallType
 from tray.geometry.path import Path
 from cyclic_n_tuples import cyclic_n_tuples
 
@@ -16,7 +17,7 @@ T = TypeVar("T", bound=SupportsFloat)
 class Tray:
     def __init__(self, material_thickness: float, inside_dim_cols: list[float], inside_dim_rows: list[float]):
         self.index_paths: list[Path[int]] = []
-        self.index_walls: list[Line[int]] = []
+        self.index_walls: list[WallLine[int]] = []
 
         self.material_thickness: float = material_thickness
 
@@ -35,7 +36,7 @@ class Tray:
     def ndx_walls_as_tuples(self) -> Iterator[tuple[T, T, T, T]]:
         return map(lambda wall: (wall.p1.x, wall.p1.y, wall.p2.x, wall.p2.y), self.index_walls)
 
-    def _classify_index_wall(self, wall: Line[int], orientation: LineOrientation) -> WallType:
+    def _classify_index_wall(self, wall: WallLine[int], orientation: LineOrientation) -> WallType:
         wall_types = []
         wall_type = WallType.NONE
 
@@ -43,7 +44,7 @@ class Tray:
             path_orientation = path.horizontal if orientation == LineOrientation.HORZ else path.vertical
 
             for line in path_orientation:
-                wall_type = Line.classify_wall(wall, line, orientation)
+                wall_type = wall.classify_wall(line, orientation)
                 wall_types.append(wall_type)
 
         if wall_type == WallType.NONE:
@@ -59,7 +60,8 @@ class Tray:
 
     def _classify_index_walls(self, orientation: LineOrientation):
         for wall in Line.of_orientation(self.index_walls, orientation):
-            self._classify_index_wall(wall, orientation)
+            wall_type = self._classify_index_wall(wall, orientation)
+            wall.wall_type = wall_type
 
     def classify_index_walls(self):
         self._classify_index_walls(LineOrientation.HORZ)
@@ -179,7 +181,7 @@ class Tray:
             )
         index_pt_1 = Point[int](*start_indexes)
         index_pt_2 = Point[int](*end_indexes)
-        index_wall = Line[int](index_pt_1, index_pt_2)
+        index_wall = WallLine[int](index_pt_1, index_pt_2)
         self.index_walls.append(index_wall)
 
     def finalize_walls(self):

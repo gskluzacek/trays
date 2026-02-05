@@ -2,7 +2,6 @@ import pytest
 from tray.geometry.point import Point, PathOrientation
 from tray.geometry.line import LineOrientation
 from tray.geometry.path import Path
-from tray.geometry.line import Line
 
 
 def test_path_init_empty():
@@ -199,5 +198,3 @@ def test_path_horizontal_vertical_empty():
     assert horz_lines[0].p2.coords == (10, 0)
     assert horz_lines[1].p1.coords == (10, 0)
     assert horz_lines[1].p2.coords == (0, 0)
-
-

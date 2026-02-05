@@ -1,7 +1,8 @@
 import pytest
 from tray.tray import Tray
 from tray.geometry.point import Point, PathOrientation
-from tray.geometry.line import Line, LineOrientation, WallType
+from tray.geometry.line import LineOrientation
+from tray.geometry.wall_line import WallLine, WallType
 
 
 def test_tray_init():
@@ -209,7 +210,7 @@ def test_end_base_validation():
     tray2.extend_base(2, 2)
     tray2.extend_base(0, 2)
     tray2.extend_base(0, 1)
-    tray2.extend_base(2, 1) # This line (0,1)->(2,1) overlaps with nothing?
+    tray2.extend_base(2, 1)  # This line (0,1)->(2,1) overlaps with nothing?
     # Wait, (0,1)->(2,1) crosses (2,0)->(2,2)? No.
     # Let's make it overlap: (0,0)->(2,0) and then later (2,0)->(0,0)
     # But Tray.end_base doesn't allow consecutive lines with same orientation.
@@ -229,7 +230,7 @@ def test_end_base_validation():
     tray3.extend_base(0, 1)
     tray3.extend_base(2, 1)
     tray3.extend_base(2, 2)
-    tray3.extend_base(0, 2) # (0,2) is between (0,3) and (0,1)
+    tray3.extend_base(0, 2)  # (0,2) is between (0,3) and (0,1)
     # Lines: (0,0)-(3,0), (3,0)-(3,3), (3,3)-(0,3), (0,3)-(0,1), (0,1)-(2,1), (2,1)-(2,2), (2,2)-(0,2), (0,2)-(0,0)
     # (0,3)-(0,1) and (0,2)-(0,0) overlap!
     with pytest.raises(ValueError, match="lines within the base path cannot overlap"):
@@ -251,7 +252,7 @@ def test_end_base_consecutive_orientation_validation():
     # This is allowed by extend_base!
     tray.start_base(0, 0)
     tray.extend_base(1, 0)
-    tray.extend_base(2, 0) # Allowed by extend_base
+    tray.extend_base(2, 0)  # Allowed by extend_base
     tray.extend_base(2, 1)
     tray.extend_base(2, 2)
     tray.extend_base(0, 2)
@@ -272,7 +273,7 @@ def test_end_base_odd_points():
     tray.extend_base(1, 0)
     tray.extend_base(1, 1)
     tray.extend_base(0, 1)
-    tray.extend_base(0, 0) # 5 points
+    tray.extend_base(0, 0)  # 5 points
     with pytest.raises(ValueError, match="the number of points in the base path must be even"):
         tray.end_base()
 
@@ -288,10 +289,10 @@ def test_add_wall_validation():
 def test_finalize_walls_validation():
     tray = Tray(1.0, [10.0, 10.0], [10.0, 10.0])
     tray.add_wall((0, 1), (2, 1))
-    tray.add_wall((1, 1), (1, 2)) # Not overlapping, just intersecting.
-    tray.finalize_walls() # Should pass.
+    tray.add_wall((1, 1), (1, 2))  # Not overlapping, just intersecting.
+    tray.finalize_walls()  # Should pass.
 
-    tray.add_wall((0, 1), (1, 1)) # Overlaps with (0,1)-(2,1)
+    tray.add_wall((0, 1), (1, 1))  # Overlaps with (0,1)-(2,1)
     with pytest.raises(ValueError, match="Cannot have overlapping walls"):
         tray.finalize_walls()
 
@@ -402,11 +403,16 @@ def test_classify_index_wall_unit():
     tray.end_base()
 
     # 1. EXTERIOR: Wall completely within a path line
-    wall_ext = Line(Point(1, 0), Point(2, 0))
+    wall_ext = WallLine(Point(1, 0), Point(2, 0))
     assert tray._classify_index_wall(wall_ext, LineOrientation.HORZ) == WallType.EXTERIOR
+    
+    # Verify that classify_index_walls actually sets the wall_type
+    tray.index_walls = [wall_ext]
+    tray.classify_index_walls()
+    assert wall_ext.wall_type == WallType.EXTERIOR
 
     # 2. INTERIOR: Wall not collinear with any path line
-    wall_int = Line(Point(0, 1), Point(3, 1))
+    wall_int = WallLine(Point(0, 1), Point(3, 1))
     assert tray._classify_index_wall(wall_int, LineOrientation.HORZ) == WallType.INTERIOR
 
     # 3. COMBO: Wall partially overlapping path line
@@ -430,7 +436,7 @@ def test_classify_index_wall_unit():
     tray_conflict_3.extend_base(0, 3)
     tray_conflict_3.end_base()
 
-    wall_test = Line(Point(0, 0), Point(2, 0))
+    wall_test = WallLine(Point(0, 0), Point(2, 0))
     # Path 1 has (0,0)-(2,0) -> Wall is EXTERIOR
     # Path 2 has (0,0)-(1,0) -> Wall is COMBO
     with pytest.raises(ValueError, match="wall type cannot be both combo and exterior"):
