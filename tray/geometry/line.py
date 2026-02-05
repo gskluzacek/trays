@@ -61,7 +61,7 @@ class Line(Generic[T]):
 
     @staticmethod
     def _intervals_overlap(lo1: T, hi1: T, lo2: T, hi2: T) -> bool:
-        return not (hi1 < lo2 or hi2 < lo1)
+        return not (hi1 <= lo2 or hi2 <= lo1)
 
     def is_overlapping(self, other: Line[T]) -> bool:
         if self.orientation != other.orientation or not self.is_collinear(other):

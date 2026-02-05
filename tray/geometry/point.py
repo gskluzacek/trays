@@ -38,9 +38,11 @@ class Point(Generic[T]):
     @overload
     @staticmethod
     def _coerce_xy(other: Point[T]) -> tuple[T, T]: ...
+
     @overload
     @staticmethod
     def _coerce_xy(other: tuple[T, T]) -> tuple[T, T]: ...
+
     @overload
     @staticmethod
     def _coerce_xy(other: object) -> tuple[T, T] | None: ...

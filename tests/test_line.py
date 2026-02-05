@@ -156,27 +156,27 @@ def test_line_of_orientation_empty():
 def test_line_is_overlapping():
     # Horizontal
     l1 = Line(Point(0, 0), Point(10, 0))
-    l2 = Line(Point(5, 0), Point(15, 0)) # Overlap
-    l3 = Line(Point(10, 0), Point(20, 0)) # Touch at endpoint
-    l4 = Line(Point(11, 0), Point(20, 0)) # No overlap
-    l5 = Line(Point(0, 1), Point(10, 1)) # Different y
+    l2 = Line(Point(5, 0), Point(15, 0))  # Overlap
+    l3 = Line(Point(10, 0), Point(20, 0))  # Touch at endpoint
+    l4 = Line(Point(11, 0), Point(20, 0))  # No overlap
+    l5 = Line(Point(0, 1), Point(10, 1))  # Different y
 
-    assert l1.is_overlapping(l2) is True
-    assert l1.is_overlapping(l3) is True
-    assert l1.is_overlapping(l4) is False
-    assert l1.is_overlapping(l5) is False
+    assert l1.is_overlapping(l2) is True  # Overlap
+    assert l1.is_overlapping(l3) is False  # Touch at endpoint
+    assert l1.is_overlapping(l4) is False  # No overlap
+    assert l1.is_overlapping(l5) is False  # Different y
 
     # Vertical
     v1 = Line(Point(0, 0), Point(0, 10))
-    v2 = Line(Point(0, 5), Point(0, 15)) # Overlap
-    v3 = Line(Point(0, 10), Point(0, 20)) # Touch at endpoint
-    v4 = Line(Point(0, 11), Point(0, 20)) # No overlap
-    v5 = Line(Point(1, 0), Point(1, 10)) # Different x
+    v2 = Line(Point(0, 5), Point(0, 15))  # Overlap
+    v3 = Line(Point(0, 10), Point(0, 20))  # Touch at endpoint
+    v4 = Line(Point(0, 11), Point(0, 20))  # No overlap
+    v5 = Line(Point(1, 0), Point(1, 10))  # Different x
 
-    assert v1.is_overlapping(v2) is True
-    assert v1.is_overlapping(v3) is True
-    assert v1.is_overlapping(v4) is False
-    assert v1.is_overlapping(v5) is False
+    assert v1.is_overlapping(v2) is True  # Overlap
+    assert v1.is_overlapping(v3) is False  # Touch at endpoint
+    assert v1.is_overlapping(v4) is False  # No overlap
+    assert v1.is_overlapping(v5) is False  # Different x
 
     # Mixed
     assert l1.is_overlapping(v1) is False
