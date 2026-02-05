@@ -89,3 +89,6 @@ class Point(Generic[T]):
             return PathOrientation.CW
         else:
             return PathOrientation.COL
+
+    def is_orthogonal(self, other: Point[T]) -> bool:
+        return (self.y == other.y or self.x == other.x) and self != other

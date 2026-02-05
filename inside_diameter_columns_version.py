@@ -44,6 +44,7 @@ def main_1():
     tray.add_wall((1, 0), (1, 3))
     tray.add_wall((3, 3), (3, 4))
     tray.add_wall((5, 0), (5, 3))
+    tray.finalize_walls()
 
     print("-" * 100)
     print("path lines")
@@ -64,10 +65,10 @@ def main_1():
 
     tray.classify_index_walls()
 
-    # tray.calc_center_to_center_dims()
-    # tray.calc_center_to_center_points()
-    # tray.calc_center_to_center_paths()
-    # tray.calc_center_to_center_walls()
+    tray.calc_center_to_center_dims()
+    tray.calc_center_to_center_points()
+    tray.calc_center_to_center_paths()
+    tray.calc_center_to_center_walls()
 
     ...
 
