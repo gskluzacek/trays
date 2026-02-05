@@ -337,7 +337,7 @@ def test_classify_index_walls_errors():
     tray_multi_ext.extend_base(3, 3)
     tray_multi_ext.extend_base(0, 3)
     tray_multi_ext.end_base()
-    
+
     tray_multi_ext.start_base(0, 0)
     tray_multi_ext.extend_base(3, 0)
     tray_multi_ext.extend_base(3, 1)
@@ -345,7 +345,7 @@ def test_classify_index_walls_errors():
     tray_multi_ext.extend_base(1, 3)
     tray_multi_ext.extend_base(0, 3)
     tray_multi_ext.end_base()
-    
+
     tray_multi_ext.add_wall((1, 0), (2, 0))
     with pytest.raises(ValueError, match="more than one exterior wall type found for this wall"):
         tray_multi_ext.classify_index_walls()
@@ -371,7 +371,7 @@ def test_classify_index_walls_max_logic():
     # Max(COMBO, INTERIOR...) -> COMBO
     tray.add_wall((0, 0), (2, 0))
     tray.classify_index_walls()
-    # No exception means it passed internal logic. 
+    # No exception means it passed internal logic.
     # Individual wall classification is tested in test_classify_index_wall_unit.
 
 
@@ -412,7 +412,7 @@ def test_classify_index_wall_unit():
     # 3. COMBO: Wall partially overlapping path line
     # Add another path to create combo situation
     # Note: Tray.end_base requires path to be on boundaries.
-    
+
     tray_conflict_3 = Tray(material_thickness, [100.0, 100.0], [100.0, 100.0, 100.0])
     # Path 1: (0,0)-(2,0)-(2,3)-(0,3)-(0,0)
     tray_conflict_3.start_base(0, 0)
@@ -420,7 +420,7 @@ def test_classify_index_wall_unit():
     tray_conflict_3.extend_base(2, 3)
     tray_conflict_3.extend_base(0, 3)
     tray_conflict_3.end_base()
-    
+
     # Path 2: (0,0)-(1,0)-(1,1)-(2,1)-(2,3)-(0,3)-(0,0)
     tray_conflict_3.start_base(0, 0)
     tray_conflict_3.extend_base(1, 0)
@@ -429,7 +429,7 @@ def test_classify_index_wall_unit():
     tray_conflict_3.extend_base(2, 3)
     tray_conflict_3.extend_base(0, 3)
     tray_conflict_3.end_base()
-    
+
     wall_test = Line(Point(0, 0), Point(2, 0))
     # Path 1 has (0,0)-(2,0) -> Wall is EXTERIOR
     # Path 2 has (0,0)-(1,0) -> Wall is COMBO
@@ -446,7 +446,7 @@ def test_classify_index_wall_unit():
     tray3.extend_base(2, 3)
     tray3.extend_base(0, 3)
     tray3.end_base()
-    
+
     # Wall (0,0)-(2,0)
     # Against Path line (0,0)-(1,0): COMBO (contains it)
     # Against other path lines: INTERIOR

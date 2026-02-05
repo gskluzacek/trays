@@ -113,7 +113,7 @@ def test_tray_classify_index_walls():
     # Wall (0,2)-(1,2) is HORZ. -> INTERIOR
     tray2.add_wall((0, 2), (1, 2))
 
-    # No exception means it passed internal logic. 
+    # No exception means it passed internal logic.
     # Individual wall classification is tested in test_classify_index_wall_unit.
     tray2.classify_index_walls()
 
