@@ -1,6 +1,7 @@
 import pytest
 from tray.tray import Tray
-from tray.geometry.point import PathOrientation
+from tray.geometry.point import Point, PathOrientation
+from tray.geometry.line import Line, LineOrientation, WallType
 
 
 def test_tray_init():
@@ -350,7 +351,7 @@ def test_classify_index_walls_errors():
         tray_multi_ext.classify_index_walls()
 
 
-def test_classify_index_walls_max_logic(capsys):
+def test_classify_index_walls_max_logic():
     material_thickness = 5.0
     inside_dim_cols = [100.0, 100.0, 100.0]
     inside_dim_rows = [100.0, 100.0, 100.0]
@@ -370,8 +371,8 @@ def test_classify_index_walls_max_logic(capsys):
     # Max(COMBO, INTERIOR...) -> COMBO
     tray.add_wall((0, 0), (2, 0))
     tray.classify_index_walls()
-    captured = capsys.readouterr()
-    assert "wall_type: combo" in captured.out
+    # No exception means it passed internal logic. 
+    # Individual wall classification is tested in test_classify_index_wall_unit.
 
 
 def test_end_base_boundary_validation():
@@ -385,3 +386,74 @@ def test_end_base_boundary_validation():
     # max_x should be 2, max_y should be 2
     with pytest.raises(ValueError, match="the base path must have points on the boundaries"):
         tray.end_base()
+
+
+def test_classify_index_wall_unit():
+    material_thickness = 5.0
+    inside_dim_cols = [100.0, 100.0, 100.0]
+    inside_dim_rows = [100.0, 100.0, 100.0]
+
+    tray = Tray(material_thickness, inside_dim_cols, inside_dim_rows)
+    # Path: (0,0)-(3,0)-(3,3)-(0,3)-(0,0) - Boundary path
+    tray.start_base(0, 0)
+    tray.extend_base(3, 0)
+    tray.extend_base(3, 3)
+    tray.extend_base(0, 3)
+    tray.end_base()
+
+    # 1. EXTERIOR: Wall completely within a path line
+    wall_ext = Line(Point(1, 0), Point(2, 0))
+    assert tray._classify_index_wall(wall_ext, LineOrientation.HORZ) == WallType.EXTERIOR
+
+    # 2. INTERIOR: Wall not collinear with any path line
+    wall_int = Line(Point(0, 1), Point(3, 1))
+    assert tray._classify_index_wall(wall_int, LineOrientation.HORZ) == WallType.INTERIOR
+
+    # 3. COMBO: Wall partially overlapping path line
+    # Add another path to create combo situation
+    # Note: Tray.end_base requires path to be on boundaries.
+    
+    tray_conflict_3 = Tray(material_thickness, [100.0, 100.0], [100.0, 100.0, 100.0])
+    # Path 1: (0,0)-(2,0)-(2,3)-(0,3)-(0,0)
+    tray_conflict_3.start_base(0, 0)
+    tray_conflict_3.extend_base(2, 0)
+    tray_conflict_3.extend_base(2, 3)
+    tray_conflict_3.extend_base(0, 3)
+    tray_conflict_3.end_base()
+    
+    # Path 2: (0,0)-(1,0)-(1,1)-(2,1)-(2,3)-(0,3)-(0,0)
+    tray_conflict_3.start_base(0, 0)
+    tray_conflict_3.extend_base(1, 0)
+    tray_conflict_3.extend_base(1, 1)
+    tray_conflict_3.extend_base(2, 1)
+    tray_conflict_3.extend_base(2, 3)
+    tray_conflict_3.extend_base(0, 3)
+    tray_conflict_3.end_base()
+    
+    wall_test = Line(Point(0, 0), Point(2, 0))
+    # Path 1 has (0,0)-(2,0) -> Wall is EXTERIOR
+    # Path 2 has (0,0)-(1,0) -> Wall is COMBO
+    with pytest.raises(ValueError, match="wall type cannot be both combo and exterior"):
+        tray_conflict_3._classify_index_wall(wall_test, LineOrientation.HORZ)
+
+    # To get COMBO as result, we need COMBO and INTERIOR (or just COMBO)
+    tray3 = Tray(material_thickness, [100.0, 100.0], [100.0, 100.0, 100.0])
+    # Path: (0,0)-(1,0)-(1,1)-(2,1)-(2,3)-(0,3)-(0,0)
+    tray3.start_base(0, 0)
+    tray3.extend_base(1, 0)
+    tray3.extend_base(1, 1)
+    tray3.extend_base(2, 1)
+    tray3.extend_base(2, 3)
+    tray3.extend_base(0, 3)
+    tray3.end_base()
+    
+    # Wall (0,0)-(2,0)
+    # Against Path line (0,0)-(1,0): COMBO (contains it)
+    # Against other path lines: INTERIOR
+    # Result: COMBO
+    assert tray3._classify_index_wall(wall_test, LineOrientation.HORZ) == WallType.COMBO
+
+    # 4. Error: No wall type found (no paths)
+    tray_empty = Tray(material_thickness, inside_dim_cols, inside_dim_rows)
+    with pytest.raises(ValueError, match="no wall type found for this wall"):
+        tray_empty._classify_index_wall(wall_ext, LineOrientation.HORZ)
