@@ -3,7 +3,7 @@ from __future__ import annotations
 import functools
 from enum import Enum
 from collections.abc import Iterator, Sequence
-from typing import Generic, SupportsFloat, TypeVar, Type
+from typing import Generic, SupportsFloat, TypeVar
 from tray.geometry.point import Point
 
 T = TypeVar("T", bound=SupportsFloat)

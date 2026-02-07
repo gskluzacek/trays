@@ -17,6 +17,7 @@ class Point:
     relative location to one another. The 3 points could be going in a clock wise orientation, a
     counter clock wise orientation or neither (i.e., the 3 points form 2 lines that are collinear).
     """
+
     def __init__(self, x: float, y: float):
         self.x = x
         self.y = y
@@ -85,6 +86,7 @@ class Line:
     out by the laser cutter but rather vertical lines cut into the material, i.e., the angle between the material
     being cut and the head of the laser cutter itself. And that this ange is limited to exactly 90 degrees.
     """
+
     def __init__(self, p1: Point, p2: Point):
         self.p1 = p1
         self.p2 = p2
@@ -161,6 +163,7 @@ class Path:
     apparently the Path class is not currently used yet, but it does have documentation value in the fact that it
     tells you that the minimum number of points required to form a polygon is 3.
     """
+
     def __init__(self, start_point: Point):
         self.points = [start_point]
 
@@ -203,6 +206,7 @@ class DimPoint:
     direction is determined (outside of the DimPoint constructor) by using the current point and next point on the
     path to form a lines object and then calling the direction method of the line object.
     """
+
     seq = count(1)
 
     def __init__(
@@ -367,6 +371,7 @@ class DimPath:
     or counter clock wise), the direction (left, right, up or down) of the current point and the direction of
     the previous point.
     """
+
     corner_side: Dict[str, Dict[str, Dict[str, str]]] = {
         "cw": {
             "left": {"up": "outside", "down": "inside"},
@@ -511,6 +516,7 @@ class AggregatePoint:
     a raw set of x y coordinates which contain min, avg and max coordinates that take the material thickness
     into consideration.
     """
+
     def __init__(
         self,
         x_min: float,
@@ -646,7 +652,7 @@ class Intersection:
 
 class WallSlot:
     def __init__(self, ws_type):
-        self.type: str = ws_type     # horz or vert
+        self.type: str = ws_type  # horz or vert
         self._intersections: List[Intersection] = []
         self.sorted = False
 
@@ -664,11 +670,12 @@ class WallSlot:
 
     def _sort(self):
         self.sorted = True
-        self._intersections.sort(key=attrgetter('xpt_sort'))
+        self._intersections.sort(key=attrgetter("xpt_sort"))
 
 
 class Wall:
     seq = count(1)
+
     def __init__(self, pt_1: Point, pt_2: Point, w_type, dim_pt: DimPoint):
         """
         Define a Wall Object.
@@ -761,6 +768,7 @@ class Base:
     The Base class represents the dimensions of the base of the tray. It uses a path of points to
     describe the polygon shape will form the base of the tray.
     """
+
     # direction_dims is a dictionary used to look up the outer, inner tuple pair for a given
     #   combination of path orientation, prev_direction and current direction
     direction_dims: Dict[str, Dict[str, Dict[str, Tuple[int, int]]]] = {
@@ -790,7 +798,7 @@ class Base:
         min_tbslt_len: int,
         wall_tbslt_dist: float,
         depth: float,
-        on_center: bool = False
+        on_center: bool = False,
     ):
         """
         Create a Base object
@@ -850,9 +858,7 @@ class Base:
         """
         return self.agg_coords[index_point.x_index][index_point.y_index].avg()
 
-    def get_dims_from_agg_points(
-        self, index_point: IndexPoint, outside: int, inside: int
-    ) -> Tuple[Point, Point]:
+    def get_dims_from_agg_points(self, index_point: IndexPoint, outside: int, inside: int) -> Tuple[Point, Point]:
         """
         Returns the inside and outside dimensions (x, y coords) points for a given index point and point numbers.
 
@@ -903,9 +909,7 @@ class Base:
                 y_min = row
                 y_max = row + self.mat_thick
                 y_avg = (y_min + y_max) / 2.0
-                row_of_agg_points.append(
-                    AggregatePoint(x_min, y_min, x_avg, y_avg, x_max, y_max)
-                )
+                row_of_agg_points.append(AggregatePoint(x_min, y_min, x_avg, y_avg, x_max, y_max))
             self.agg_coords.append(row_of_agg_points)
 
     def calc_agg_coords(self):
@@ -948,9 +952,7 @@ class Base:
                 y_min = row
                 y_max = row + self.mat_thick
                 y_avg = (y_min + y_max) / 2.0
-                row_of_agg_points.append(
-                    AggregatePoint(x_min, y_min, x_avg, y_avg, x_max, y_max)
-                )
+                row_of_agg_points.append(AggregatePoint(x_min, y_min, x_avg, y_avg, x_max, y_max))
             self.agg_coords.append(row_of_agg_points)
 
     def calc_dim_paths(self):
@@ -959,14 +961,12 @@ class Base:
         #   and more usable by other functions (if necessary). That is if we needed to create DimPath objects from
         #   other lists than just the list used to hold the BASE object's points.
         for i_path in self.index_paths:
-
             # determine the orientation for the path by using the first 3 points of the path
             path_ori = i_path.orientation
 
             # loop over each point in the path with its corresponding prev and next points
             dim_path = DimPath(path_ori)
             for prev_i_point, curr_i_point, next_i_point in cyclic_n_tuples(i_path.index_points, 3, -1):
-
                 # get the avg aggregate (on center) point for the p, c & n ndx pts
                 prev_pt = self.get_avg_agg_point(prev_i_point)
                 curr_pt = self.get_avg_agg_point(curr_i_point)
@@ -985,9 +985,7 @@ class Base:
                 #   current line direction
                 #   and path orientation
                 outside_pt_nbr, inside_pt_nbr = Base.dim(prev_dire, curr_dire, path_ori)
-                outside_dim, inside_dim = self.get_dims_from_agg_points(
-                    curr_i_point, outside_pt_nbr, inside_pt_nbr
-                )
+                outside_dim, inside_dim = self.get_dims_from_agg_points(curr_i_point, outside_pt_nbr, inside_pt_nbr)
                 new_dim_point = dim_path.add(
                     direction=curr_dire,
                     line_type=curr_i_point.line_type,
@@ -1018,7 +1016,6 @@ class Base:
 
         path_ori = None
         for i in range(len(i_path.index_points) - 2):
-
             i_pt_1 = i_path.index_points[i]
             pt_1 = self.get_avg_agg_point(i_pt_1)
 
@@ -1087,7 +1084,7 @@ class Base:
                     on_center_pt=curr_point.on_center_pt,
                     inside_pt=curr_point.inside_pt,
                     index_point=curr_point.index_point,
-                    copy_id=curr_point.id
+                    copy_id=curr_point.id,
                 )
                 curr_i_pt = curr_point.index_point
                 index_pt = IndexPoint(
@@ -1114,7 +1111,7 @@ class Base:
         svg_paths = []
         for norm_dim_path in self.norm_dim_paths:
             for curr_dim_pt in norm_dim_path.path_points:
-                next_dim_pt = curr_dim_pt.next_dim_pt()         # only used to get the ho_len
+                next_dim_pt = curr_dim_pt.next_dim_pt()  # only used to get the ho_len
                 svg_cmds = []
 
                 #
@@ -1197,7 +1194,7 @@ class Base:
                 svg_cmds.append(f"H {x_side_2_a}")
 
                 # upper right ending length and material thickness
-                y -= (be_len + self.mat_thick)
+                y -= be_len + self.mat_thick
                 svg_cmds.append(f"V {y}")
                 # svg_cmds.append("\n\n")
 
@@ -1206,12 +1203,12 @@ class Base:
                     x_side_2_a = x
                     x_side_2_b = x_side_2_a + self.mat_thick
                 else:
-                    x += (self.mat_thick * 2)
+                    x += self.mat_thick * 2
                     x_side_2_a = x
                     x_side_2_b = x_side_2_a - self.mat_thick
                 svg_cmds.append(f"H {x}")
 
-                y += (be_len + self.mat_thick)
+                y += be_len + self.mat_thick
                 svg_cmds.append(f"V {y}")
 
                 for _ in range(nbr_of_spcs):
@@ -1244,7 +1241,9 @@ class Base:
                         svg_cmds.append(f"H {horz_os + oc_len}")
                         svg_cmds.append("Z")
                         # top tab
-                        svg_cmds.append(f"M {horz_os + oc_len} {y_side_a - self.wall_tbslt_dist - self.wall_tbslt_dist - vtab_len}")
+                        svg_cmds.append(
+                            f"M {horz_os + oc_len} {y_side_a - self.wall_tbslt_dist - self.wall_tbslt_dist - vtab_len}"
+                        )
                         svg_cmds.append(f"H {horz_os + oc_len + self.mat_thick}")
                         svg_cmds.append(f"V {y_side_a - self.wall_tbslt_dist - self.wall_tbslt_dist - vtab_len - vtab_len}")
                         svg_cmds.append(f"H {horz_os + oc_len}")
@@ -1257,7 +1256,6 @@ class Base:
 
             outer_walls = "\n".join(svg_paths)
             print(outer_walls)
-
 
     def gen_svg_inner_walls(self):
         extra_space = 20
@@ -1354,7 +1352,7 @@ class Base:
             svg_cmds.append("Z")
 
             # slots for Tee intersections
-            x_slot =  x_side_1_a
+            x_slot = x_side_1_a
             for intrxn_1, intrxn_2 in fwd_pair(bslot.intersections[:-1]):
                 span_len = Line(intrxn_1.intrxn, intrxn_2.intrxn).length()
                 x_slot += span_len
@@ -1549,7 +1547,6 @@ class Base:
         svg_path = " ".join(path_cmds)
         print(svg_path)
 
-
     def gen_svg_path_raw(self, i: int = 0, dim: str = "outside"):
         dim_path = self.dim_paths[i]
 
@@ -1599,7 +1596,6 @@ class Base:
         wall = IndexWall(start, end, wall_type)
         self.index_walls.append(wall)
 
-
     @classmethod
     def dim(cls, dire1, dire2, ori) -> Tuple[int, int]:
         """
@@ -1645,21 +1641,57 @@ class Base:
                 walls_vert.append(wall)
             # print(f"{wall} -- {index_wall.start_pt} {index_wall.end_pt}")
 
-        bslots = {}
+        # the bslots dictionary will have a key (of Wall.id) for each wall in self.index_walls
+        bslots: dict[int, WallSlot] = {}
+
+        # the note in the TO-DO below states that the exterior_walls dictionary is for code that may be
+        #     unfinished / or is incapable of being completed???
+
+        # the exterior_walls dictionary will have a key (of Wall.id) for each wall in self.index_walls
+
         exterior_walls = {}
         for wall_h in walls_horz:
             for wall_v in walls_vert:
                 x_type, x_subtype, x_point = wall_h.intersect(wall_v)
-                if x_type:
-                    if wall_h.type == "tab_slot":
-                        bslots.setdefault(wall_h.id, WallSlot('horz')).add(x_point, x_type, x_subtype)
-                    elif wall_h.type == "finger":
-                        exterior_walls.setdefault(wall_h.id, WallSlot('horz')).add(x_point, x_type, x_subtype, wall_h.dim_pt)
-                    if wall_v.type == "tab_slot":
-                        bslots.setdefault(wall_v.id, WallSlot('vert')).add(x_point, x_type, x_subtype)
-                    elif wall_v.type == "finger":
-                        exterior_walls.setdefault(wall_v.id, WallSlot('vert')).add(x_point, x_type, x_subtype, wall_v.dim_pt)
 
+                if x_type:
+                    # SETDEFAULT:
+                    #       If the specified key is in the dictionary
+                    #           return the key's value
+                    #       If the specified key is NOT in the dictionary
+                    #           1. add the key to the dictionary
+                    #           2. set the key to the default value
+                    #           3. return the value of the key (ie., the default value).
+
+                    # our use of SETDEFAULT (for bslots):
+                    #   Wall objects have an integer sequence number generated & assigned to them when they are created
+                    #   WallSlot objects contain a list of Intersection objects
+                    #   Intersection objects contain the intersection Point object and x_type & x_subtype
+                    #
+                    #   if the Wall.id does not exist in the `bslots` dictionary (dict[int, WallSlot])
+                    #       then we create a new empty WallSlot object and add it to the dictionary using the Wall.id as the key
+                    #   we then add a new Intersection object to the WallSlot object's list of intersections.
+
+                    # because there are 2 walls involved in an intersection...
+                    # we are adding a new Intersection object to the WallSlot object of 2 bslots keys
+                    # 1) for the horizontal wall's id
+                    # 2) and for the vertical wall's id
+
+                    # NOTE: we are EITHER adding to the `bslots` dictionary or adding to the `exterior_walls` dictionary
+                    if wall_h.type == "tab_slot":
+                        bslots.setdefault(wall_h.id, WallSlot("horz")).add(x_point, x_type, x_subtype)
+                    elif wall_h.type == "finger":
+                        exterior_walls.setdefault(wall_h.id, WallSlot("horz")).add(x_point, x_type, x_subtype, wall_h.dim_pt)
+
+                    # NOTE: we are EITHER adding to the `bslots` dictionary or adding to the `exterior_walls` dictionary
+                    if wall_v.type == "tab_slot":
+                        bslots.setdefault(wall_v.id, WallSlot("vert")).add(x_point, x_type, x_subtype)
+                    elif wall_v.type == "finger":
+                        exterior_walls.setdefault(wall_v.id, WallSlot("vert")).add(x_point, x_type, x_subtype, wall_v.dim_pt)
+
+        # the values of the bslots dict are the WallSlot objects (each wall slot object is for a wall
+        # with a given id) with their list of installations
+        self.bslots = bslots
         for val in bslots.values():
             self.base_slots.append(val)
 
@@ -1693,7 +1725,6 @@ class Base:
             print(n_dim_path)
 
 
-
 def main():
     #
     # create the appropriate base for the desired polygon use case
@@ -1725,6 +1756,7 @@ def main():
 
     print("\n\nDONE")
 
+
 class Test:
     @staticmethod
     def base_5():
@@ -1741,7 +1773,7 @@ class Test:
             max_tbslt_bt_xs=2,
             wall_tbslt_dist=5,
             depth=75,
-            on_center=True
+            on_center=True,
         )
         base.calc_agg_coords_oc()
         return base

@@ -1,15 +1,121 @@
 from __future__ import annotations
 
-from typing import Optional
+from enum import Enum
+from functools import total_ordering
+from typing import SupportsFloat, TypeAlias, TypeVar, Generic, overload, cast
+
+T = TypeVar("T", bound=SupportsFloat)
+PointLike: TypeAlias = "Point[T] | tuple[T, T]"
 
 
-class Point:
-    def __init__(self, x: float, y: float):
+class PathOrientation(Enum):
+    CW = "clockwise"
+    CCW = "counter_clockwise"
+    COL = "collinear"
+    NONE = "none"
+
+
+@total_ordering
+class Point(Generic[T]):
+    def __init__(self, x: T, y: T) -> None:
         self.x = x
         self.y = y
 
+    def __repr__(self) -> str:
+        return f"Point(x={self.x}, y={self.y})"
 
-class Wall:
+    def __str__(self) -> str:
+        return f"[{self.x}, {self.y}]"
+
+    @staticmethod
+    def _validate_pair_xy(ax: T, ay: T, bx: T, by: T) -> None:
+        # Allowed: identical OR share x OR share y
+        # Disallowed: both coordinates differ
+        if ax != bx and ay != by:
+            raise ValueError("Unsupported comparison: points must be identical or share x or share y.")
+
+    @overload
+    @staticmethod
+    def _coerce_xy(other: Point[T]) -> tuple[T, T]: ...
+
+    @overload
+    @staticmethod
+    def _coerce_xy(other: tuple[T, T]) -> tuple[T, T]: ...
+
+    @overload
+    @staticmethod
+    def _coerce_xy(other: object) -> tuple[T, T] | None: ...
+
+    @staticmethod
+    def _coerce_xy(other: object) -> tuple[T, T] | None:
+        if isinstance(other, Point):
+            return cast(tuple[T, T], (other.x, other.y))
+        if isinstance(other, tuple) and len(other) == 2:
+            x, y = other
+            return cast(tuple[T, T], (x, y))
+        return None
+
+    def __eq__(self, other: object) -> bool:
+        other_xy = self._coerce_xy(other)
+        if other_xy is None:
+            return NotImplemented
+        ox, oy = other_xy
+        self._validate_pair_xy(self.x, self.y, ox, oy)
+        return (self.x, self.y) == (ox, oy)
+
+    def __lt__(self, other: object) -> bool:
+        other_xy = self._coerce_xy(other)
+        if other_xy is None:
+            return NotImplemented
+        ox, oy = other_xy
+        self._validate_pair_xy(self.x, self.y, ox, oy)
+        return (self.x, self.y) < (ox, oy)
+
+    @property
+    def coords(self) -> tuple[T, T]:
+        return self.x, self.y
+
+    def orientation(self, p2: Point[T], p3: Point[T]) -> PathOrientation:
+        p1 = self
+        x1, y1 = float(p1.x), float(p1.y)
+        x2, y2 = float(p2.x), float(p2.y)
+        x3, y3 = float(p3.x), float(p3.y)
+
+        val = ((y2 - y1) * (x3 - x2)) - ((x2 - x1) * (y3 - y2))
+
+        # note we are operating in quadrant 4, so we are swapping the values that correspond to cw & ccw
+        if val > 0:
+            return PathOrientation.CCW
+        elif val < 0:
+            return PathOrientation.CW
+        else:
+            return PathOrientation.COL
+
+    def is_orthogonal(self, other: Point[T]) -> bool:
+        return (self.y == other.y or self.x == other.x) and self != other
+
+
+class IntersectionType(Enum):
+    CROSS = "cross"
+    CORNER = "corner"
+    TEE = "tee"
+    NONE = "none"
+
+
+class IntersectionSubType(Enum):
+    UPPER_LEFT = "upper-left"
+    LOWER_LEFT = "lower-left"
+    UPPER_RIGHT = "upper-right"
+    LOWER_RIGHT = "lower-right"
+    TOP = "top"
+    BOTTOM = "bottom"
+    LEFT = "left"
+    RIGHT = "right"
+    NONE = "none"
+    NA = "N/A"
+
+
+class Wall(Generic[T]):
     """
     if...
     1. the origin is in the upper left of the screen, i.e., x grows larger as you move to the right and y grows larger as you move down
@@ -62,7 +168,14 @@ class Wall:
     But **with your stated constraints**, the logic and the corner/tee labeling are correct.
     """
 
-    def __init__(self, pt_1: Point, pt_2: Point):
+    corner_map: dict[tuple[bool, bool, bool, bool], IntersectionSubType] = {
+        (True, False, True, False): IntersectionSubType.UPPER_LEFT,
+        (True, False, False, True): IntersectionSubType.LOWER_LEFT,
+        (False, True, True, False): IntersectionSubType.UPPER_RIGHT,
+        (False, True, False, True): IntersectionSubType.LOWER_RIGHT,
+    }
+
+    def __init__(self, pt_1: Point[T], pt_2: Point[T]):
         self.id = ...
         self.dim_pt = ...
         self.type = ...
@@ -71,7 +184,13 @@ class Wall:
         self.pt_2 = pt_2
         self.inter_walL_list = []
 
-    def intersect(self, other: Wall) -> tuple[Optional[str], Optional[str], Optional[Point]]:
+    def intersect(
+        self, other: Wall[T]
+    ) -> tuple[
+        IntersectionType | None,
+        IntersectionSubType | None,
+        Point[T] | None,
+    ]:
         """
         Determine the intersection type if a given vertical wall intersects with a given horizontal wall.
 
@@ -90,45 +209,61 @@ class Wall:
 
         ipt = Point(val_vert, val_horz)
 
-        def _outside(start: float, end: float, value: float) -> bool:
+        def _outside(start: T, end: T, value: T) -> bool:
             return value < start or value > end
 
-        def _between(start: float, end: float, value: float) -> bool:
-            return value > start and value < end
+        def _between(start: T, end: T, value: T) -> bool:
+            return value > start and value < end  # noqa
 
-        def _start_end(start: float, end: float, value: float) -> tuple[bool, bool]:
+        def _start_end(start: T, end: T, value: T) -> tuple[bool, bool]:
             return value == start, value == end
 
         # Fast reject: they can only intersect if projected ranges overlap (inclusive).
-        if _outside(start_horz, end_horz, val_vert) or _outside(start_vert, end_vert, val_horz):
+        # fmt: off
+        if (
+                _outside(start_horz, end_horz, val_vert) or
+                _outside(start_vert, end_vert, val_horz)
+        ):
             return None, None, None
+        # fmt: on
 
         inside_horz = _between(start_horz, end_horz, val_vert)
         inside_vert = _between(start_vert, end_vert, val_horz)
 
         # Cross: strictly inside both segments.
         if inside_horz and inside_vert:
-            return "cross", None, ipt
+            return IntersectionType.CROSS, IntersectionSubType.NA, ipt
 
         # Corner: intersection equals an endpoint of both segments.
         at_left_end, at_right_end = _start_end(start_horz, end_horz, val_vert)
         at_top_end, at_bottom_end = _start_end(start_vert, end_vert, val_horz)
 
-        corner_map = {
-            (True, False, True, False): "upper-left",
-            (True, False, False, True): "lower-left",
-            (False, True, True, False): "upper-right",
-            (False, True, False, True): "lower-right",
-        }
-        corner_key = (at_left_end, at_right_end, at_top_end, at_bottom_end)
-        if corner_key in corner_map:
-            return "corner", corner_map[corner_key], ipt
+        corner_key: tuple[bool, bool, bool, bool] = (
+            at_left_end,
+            at_right_end,
+            at_top_end,
+            at_bottom_end,
+        )
+        if corner_key in self.corner_map:
+            return (
+                IntersectionType.CORNER,
+                self.corner_map[corner_key],
+                ipt,
+            )
 
         # Tee: on an endpoint of exactly one segment and strictly inside the other.
         if inside_horz and (at_top_end or at_bottom_end):
-            return "tee", ("top" if at_top_end else "bottom"), ipt
+            return (
+                IntersectionType.TEE,
+                (IntersectionSubType.TOP if at_top_end else IntersectionSubType.BOTTOM),
+                ipt,
+            )
 
         if inside_vert and (at_left_end or at_right_end):
-            return "tee", ("left" if at_left_end else "right"), ipt
+            return (
+                IntersectionType.TEE,
+                (IntersectionSubType.LEFT if at_left_end else IntersectionSubType.RIGHT),
+                ipt,
+            )
 
         return None, None, None
