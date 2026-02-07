@@ -1,0 +1,75 @@
+class DimPoint
+    has attribute: intersections: list[Intersection]
+
+class Intersection
+    has attributes:
+        - intrxn: Point ->
+            - x: float
+            - y: float
+        - x_type: str
+        - x_subtype: str
+        - xpt_sort: tuple[float, float]
+
+class WallSlot
+    has attributes:
+        - type: str
+        - _intersections: list[Intersection]
+        - sorted: bool
+    has property: intersections ->
+        - sorts the _intersections list by xpt_sort
+        = returns the sorted list of Intersection objects
+    has methods:
+        - add: arguments of ->
+            - intrxn_pt: Point
+            - x_type: str
+            - x_subtype: str
+            - dim_pt: DimPoint
+            = logic
+                - creates Intersection object(intrxn_pt, x_type, x_subtype)
+                - adds to self._intersections list
+                - adds to dim_pt.intersections list if x_type != "corner"
+        - _sort: sorts self._intersections list by xpt_sort
+
+class Wall:
+    NOTES:
+        - looks like the core logic to determine the intersection point & type in in the intersect method
+        - intersection of the 2 lines is:
+            - the X coordinate of the vertical wall
+            - the Y coordinate of the horizontal wall
+    __int__: arguments of ->
+        - pt_1: Point
+        - pt_2: Point
+        - w_type: str
+        - dim_pt: DimPoint
+    has attributes:
+        - id: int <- next(self.seq)
+        - dim_pt: DimPoint <- dim_pt
+        - type: str <- w_type
+        - pt_1: Point <- pt_1
+        - pt_2: Point <- pt_2
+        - inter_wall_list <- []
+            // appears unused - docs: list of IntersectionToWall
+            // objects (class not defined) that the wall contains
+    has methods:
+        - intersect: arguments of ->
+            - other: Wall
+        = returns ->
+            - x_type: str -> "corner" | "tee" | "cross"
+            - x_subtype: str ->
+                - corner: "top" | "bottom" | "left" | "right"
+                - tee: "upper-left" | "upper-right" | "lower-left" | "lower-right"
+                - cross: None
+            - x_point: Point
+        // docs: Determine the intersection type if a given vertical wall
+        // intersects with a given horizontal wall.
+        // returns the type of intersection: corner, cross, tee or None if the 2 walls do not intersect
+
+class Base:
+    has a proc_walls method: it -->
+        - builds a list of Wall object from self.index_walls
+        - uses the avg pt vals
+        - and determines the wall's orientation: VERT | HORZ
+        - using nested for loops, it:
+          - loops over the horizontal walls in the outer loop
+            - then loops over the vertical walls in the inner loop
+        - for each combination of horizontal and vertical walls, it calls the Wall.interect method
