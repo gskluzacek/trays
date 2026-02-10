@@ -43,6 +43,31 @@ class Line(Generic[T]):
     def is_horizontal(self) -> bool:
         return self.orientation == LineOrientation.HORZ
 
+    @property
+    def start_end(self) -> tuple[T, T]:
+        p1, p2 = self.normalize
+        if self.is_horizontal:
+            return p1.x, p2.x
+        return p1.y, p2.y
+
+    def wall_inside_path(self, other: Line[T]) -> list[T]:
+        # return a list of endpoints from the wall-line that are inside the path-line
+        # this list could be empty, have just one endpoint, or have two endpoints
+        # additionally, the wall-line endpoints must be strictly inside the path-line
+        # if the endpoints are only touching each other, they are not inside
+        # an endpoint is just a number - it is not x, y coordinates
+        # self is the wall-ine and other is the path-line
+        # start_end will take care of the normalization of the points and checking the orientation
+        # the 2 lines must be the collinear (and the same orientation)
+
+        if not self.is_collinear(other):
+            raise ValueError("cannot determine endpoints of wall line that are inside path line if lines are not collinear")
+
+        w1, w2 = self.start_end
+        p1, p2 = other.start_end
+
+        return [w for w in (w1, w2) if p1 < w < p2]
+
     @staticmethod
     def _intervals_overlap(lo1: T, hi1: T, lo2: T, hi2: T) -> bool:
         return not (hi1 <= lo2 or hi2 <= lo1)

@@ -29,18 +29,15 @@ class WallLine(Line[T]):
         super().__init__(p1, p2)
         self.wall_type: WallType = wall_type
 
-    def classify_wall(self, path_line: Line[T], orientation: LineOrientation) -> WallType:
-        (w1, w2) = self.normalize
-        (p1, p2) = path_line.normalize
+    def __repr__(self) -> str:
+        return f"Line(p1={self.p1!r}, p2={self.p2!r}, type={self.orientation!r}, wall_type={self.wall_type!r})"
 
-        if orientation == LineOrientation.HORZ:
-            w1, w2 = w1.x, w2.x
-            p1, p2 = p1.x, p2.x
-        elif orientation == LineOrientation.VERT:
-            w1, w2 = w1.y, w2.y
-            p1, p2 = p1.y, p2.y
-        else:
-            raise ValueError("orientation must be either vertical or horizontal")
+    def __str__(self) -> str:
+        return f"[{self.p1}, {self.p2}, {self.orientation}, {self.wall_type.label}]"
+
+    def classify_wall(self, path_line: Line[T], orientation: LineOrientation) -> WallType:
+        w1_val, w2_val = self.start_end
+        p1_val, p2_val = path_line.start_end
 
         col = self.is_collinear(path_line)
 
@@ -48,28 +45,28 @@ class WallLine(Line[T]):
             case False:
                 return WallType.INTERIOR
 
-            # w completely below p OR completely above p (including touching at endpoints)
-            case True if (w2 <= p1) or (w1 >= p2):
+            # w is A) completely below/left p OR B) completely above/right p (including touching at endpoints)
+            case True if (w2_val <= p1_val) or (w1_val >= p2_val):
                 return WallType.INTERIOR
 
             # partial overlap on one side -> "combo"
-            case True if (w1 < p1 < w2 < p2) or (p1 < w1 < p2 < w2):
+            case True if (w1_val < p1_val < w2_val < p2_val) or (p1_val < w1_val < p2_val < w2_val):
                 return WallType.COMBO
 
-            case True if (w1 == p1 and w2 > p2) or (w2 == p2 and w1 < p1):
+            case True if (w1_val == p1_val and w2_val > p2_val) or (w2_val == p2_val and w1_val < p1_val):
                 return WallType.COMBO
 
-            case True if w1 < p1 and w2 > p2:
+            case True if w1_val < p1_val and w2_val > p2_val:
                 return WallType.COMBO
 
             # w within p or equal -> "exterior" per your original mapping
-            case True if (w1 == p1 and w2 < p2) or (w2 == p2 and w1 > p1):
+            case True if (w1_val == p1_val and w2_val < p2_val) or (w2_val == p2_val and w1_val > p1_val):
                 return WallType.EXTERIOR
 
-            case True if p1 < w1 and w2 < p2:
+            case True if p1_val < w1_val and w2_val < p2_val:
                 return WallType.EXTERIOR
 
-            case True if w1 == p1 and w2 == p2:
+            case True if w1_val == p1_val and w2_val == p2_val:
                 return WallType.EXTERIOR
 
             case _:

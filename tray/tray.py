@@ -4,7 +4,6 @@ from collections.abc import Iterator
 from typing import TypeVar, SupportsFloat
 from itertools import combinations
 
-
 from tray.geometry.point import Point
 from tray.geometry.line import Line, LineOrientation
 from tray.geometry.wall_line import WallLine, WallType
@@ -38,6 +37,7 @@ class Tray:
 
     def _classify_index_wall(self, wall: WallLine[int], orientation: LineOrientation) -> WallType:
         wall_types = []
+        wall_segments = []
         wall_type = WallType.NONE
 
         for path in self.index_paths:
@@ -46,6 +46,16 @@ class Tray:
             for line in path_orientation:
                 wall_type = wall.classify_wall(line, orientation)
                 wall_types.append(wall_type)
+                print(f"{wall} to {line} <-- {wall_type.name}")
+
+                if wall_type == WallType.COMBO or wall_type == WallType.EXTERIOR:
+                    for endpoint in wall.wall_inside_path(line):
+                        line.add_break(endpoint)
+
+                if wall_type == WallType.COMBO:
+                    ...
+                    # wall_segment = wall.path_inside_wall(line)
+                    # wall_segments.append(wall_segment)
 
         if wall_type == WallType.NONE:
             raise ValueError("no wall type found for this wall")
@@ -163,16 +173,14 @@ class Tray:
             if curr_line.orientation == prev_line.orientation:
                 raise ValueError("consecutive lines in the base path cannot have the same orientation")
 
-        if self._is_overlapping_lines(self.index_paths[-1].lines):
-            raise ValueError("lines within the base path cannot overlap")
+        self._validate_for_overlapping_lines(self.index_paths[-1].lines)
 
     @staticmethod
-    def _is_overlapping_lines(lines: list[Line[T]]) -> bool:
+    def _validate_for_overlapping_lines(lines: list[Line[T]]) -> None:
         line_pairs = combinations(lines, 2)
         for line1, line2 in line_pairs:
             if line1.is_overlapping(line2):
-                return True
-        return False
+                raise ValueError(f"lines cannot overlap - Line 1: {line1}, Line 2: {line2} ")
 
     def add_wall(self, start_indexes: tuple[int, int], end_indexes: tuple[int, int]) -> None:
         if not self._is_index_within_bounds(*start_indexes) or not self._is_index_within_bounds(*end_indexes):
@@ -185,8 +193,7 @@ class Tray:
         self.index_walls.append(index_wall)
 
     def finalize_walls(self):
-        if self._is_overlapping_lines(self.index_walls):
-            raise ValueError("Cannot have overlapping walls")
+        self._validate_for_overlapping_lines(self.index_walls)
 
     def auto_generate_exterior_base_walls(self):
         for index_path in self.index_paths:

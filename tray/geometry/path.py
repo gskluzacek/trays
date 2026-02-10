@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from typing import Generic, SupportsFloat, TypeVar
+
+from tray.geometry.path_line import PathLine
 from tray.geometry.point import Point, PathOrientation
 from tray.geometry.line import Line, LineOrientation
 from cyclic_n_tuples import fwd_n_tuple, cyclic_n_tuples
@@ -18,12 +20,12 @@ class Path(Generic[T]):
         self.points: list[Point[T]] = [start_point] if start_point else []
         self.orientation: PathOrientation = orientation
         # NOTE: Path.lines does not get populated until finalize() is called.
-        self.lines: list[Line[T]] = []
+        self.lines: list[PathLine[T]] = []
 
     def finalize(self) -> None:
         self.lines = []
         for p1, p2 in cyclic_n_tuples(self.points, n=2, offset=0):
-            self.lines.append(Line(p1, p2))
+            self.lines.append(PathLine(p1, p2))
 
     @property
     def points_as_tuples(self) -> Iterator[tuple[T, T]]:
