@@ -177,6 +177,15 @@ def test_path_horizontal_vertical_properties():
     assert vert_lines[1].p1.coords == (0, 10)
     assert vert_lines[1].p2.coords == (0, 0)
 
+def test_path_line_repr():
+    from tray.geometry.path_line import PathLine
+    p1 = Point(0, 0)
+    p2 = Point(10, 0)
+    pl = PathLine(p1, p2)
+    pl.add_break(5)
+    expected = f"PathLine(p1={p1!r}, p2={p2!r}, type={pl.orientation!r}, breaks={[5]!r})"
+    assert repr(pl) == expected
+
 
 def test_path_horizontal_vertical_empty():
     path = Path()

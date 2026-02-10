@@ -126,3 +126,16 @@ def test_is_orthogonal():
     assert p1.is_orthogonal(p3) is True
     assert p1.is_orthogonal(p4) is False
     assert p1.is_orthogonal(p1) is False
+
+def test_point_negative_coords_raises():
+    with pytest.raises(ValueError, match="x and y must be non-negative"):
+        Point(-1, 0)
+    with pytest.raises(ValueError, match="x and y must be non-negative"):
+        Point(0, -1)
+
+def test_point_le_gt_incompatible_type():
+    p1 = Point(1, 2)
+    with pytest.raises(TypeError):
+        _ = p1 <= 10
+    with pytest.raises(TypeError):
+        _ = p1 > 10

@@ -180,3 +180,9 @@ def test_line_is_overlapping():
 
     # Mixed
     assert l1.is_overlapping(v1) is False
+
+def test_line_wall_inside_path_not_collinear_raises():
+    l1 = Line(Point(0, 0), Point(10, 0))
+    l2 = Line(Point(0, 1), Point(10, 1))
+    with pytest.raises(ValueError, match="cannot determine endpoints of wall line that are inside path line if lines are not collinear"):
+        l1.wall_inside_path(l2)
