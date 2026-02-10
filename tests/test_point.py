@@ -149,6 +149,7 @@ def test_is_orthogonal_same_point():
     p1 = Point(0, 0)
     assert p1.is_orthogonal(p1) is False
 
+
 def test_point_negative_x_raises():
     with pytest.raises(ValueError, match="x and y must be non-negative"):
         Point(-1, 0)
@@ -157,6 +158,7 @@ def test_point_negative_x_raises():
 def test_point_negative_y_raises():
     with pytest.raises(ValueError, match="x and y must be non-negative"):
         Point(0, -1)
+
 
 def test_point_le_incompatible_type():
     p1 = Point(1, 2)
