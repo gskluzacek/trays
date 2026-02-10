@@ -152,7 +152,7 @@ def test_path_finalize():
     assert path.lines[3].orientation == LineOrientation.VERT
 
 
-def test_path_horizontal_vertical_properties():
+def test_path_horizontal_properties():
     path = Path()
     path.add_point(Point(0, 0))
     path.add_point(Point(10, 0))
@@ -161,8 +161,6 @@ def test_path_horizontal_vertical_properties():
     path.finalize()
 
     horz_lines = list(path.horizontal)
-    vert_lines = list(path.vertical)
-
     assert len(horz_lines) == 2
     assert all(line.is_horizontal for line in horz_lines)
     assert horz_lines[0].p1.coords == (0, 0)
@@ -170,6 +168,16 @@ def test_path_horizontal_vertical_properties():
     assert horz_lines[1].p1.coords == (10, 10)
     assert horz_lines[1].p2.coords == (0, 10)
 
+
+def test_path_vertical_properties():
+    path = Path()
+    path.add_point(Point(0, 0))
+    path.add_point(Point(10, 0))
+    path.add_point(Point(10, 10))
+    path.add_point(Point(0, 10))
+    path.finalize()
+
+    vert_lines = list(path.vertical)
     assert len(vert_lines) == 2
     assert all(line.is_vertical for line in vert_lines)
     assert vert_lines[0].p1.coords == (10, 0)
