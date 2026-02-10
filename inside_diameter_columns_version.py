@@ -1,6 +1,113 @@
 from __future__ import annotations
 
+from tray.geometry.point import Point
 from tray.tray import Tray
+
+
+def main_3():
+    auto_generate_exterior_base_walls = False
+    material_thickness: float = 5
+    inside_dim_cols: list[float] = [50, 100]
+    inside_dim_rows: list[float] = [50, 100, 50, 100, 50]
+
+    tray = Tray(material_thickness, inside_dim_cols, inside_dim_rows)
+
+    # define the polygon for the tray's base
+    tray.start_base(0, 0)
+    tray.extend_base(2, 0)
+    tray.extend_base(2, 1)
+    tray.extend_base(1, 1)
+    tray.extend_base(1, 2)
+    tray.extend_base(2, 2)
+    tray.extend_base(2, 3)
+    tray.extend_base(1, 3)
+    tray.extend_base(1, 4)
+    tray.extend_base(2, 4)
+    tray.extend_base(2, 5)
+    tray.extend_base(0, 5)
+
+    tray.end_base()
+
+    # add lines to represent the walls of the tray (these are the exterior or combo walls)
+    if auto_generate_exterior_base_walls:
+        tray.auto_generate_exterior_base_walls()
+    else:
+        tray.add_wall((1, 1), (1, 4))
+
+    # add lines to represent the walls of the tray (these are the interior walls)
+    # tray.add_wall((1, 1), (3, 1))
+
+    tray.finalize_walls()
+    tray.classify_index_walls()
+
+    print("-" * 100)
+    print("path lines")
+    print("-" * 100)
+
+    for i, index_path in enumerate(tray.index_paths):
+        for j, line in enumerate(index_path.lines):
+            print(f"[{i} {j}]: {line}")
+
+    print("-" * 100)
+    print("wall lines")
+    print("-" * 100)
+
+    for i, line in enumerate(tray.index_walls):
+        print(f"[{i}]: {line}")
+
+    print("--" * 100)
+
+
+def main_2():
+    auto_generate_exterior_base_walls = False
+    material_thickness: float = 5
+    inside_dim_cols: list[float] = [100, 25, 50, 75]
+    inside_dim_rows: list[float] = [25, 125, 50, 200]
+
+    tray = Tray(material_thickness, inside_dim_cols, inside_dim_rows)
+
+    # define the polygon for the tray's base
+    tray.start_base(0, 0)
+    tray.extend_base(4, 0)
+    tray.extend_base(4, 4)
+    tray.extend_base(0, 4)
+    tray.end_base()
+
+    # add lines to represent the walls of the tray (these are the exterior or combo walls)
+    if auto_generate_exterior_base_walls:
+        tray.auto_generate_exterior_base_walls()
+    else:
+        tray.add_wall((0, 0), (2, 0))
+        tray.add_wall((4, 2), (4, 4))
+        tray.add_wall((3, 4), (1, 4))
+        tray.add_wall((0, 4), (0, 0))
+
+    # add lines to represent the walls of the tray (these are the interior walls)
+    tray.add_wall((1, 1), (3, 1))
+    tray.add_wall((1, 3), (3, 3))
+    tray.add_wall((1, 1), (1, 3))
+    tray.add_wall((3, 1), (3, 3))
+
+    tray.finalize_walls()
+
+    tray.classify_index_walls()
+
+    print("-" * 100)
+    print("path lines")
+    print("-" * 100)
+
+    for i, index_path in enumerate(tray.index_paths):
+        for j, line in enumerate(index_path.lines):
+            print(f"[{i} {j}]: {line}")
+
+    print("-" * 100)
+    print("wall lines")
+    print("-" * 100)
+
+    for i, line in enumerate(tray.index_walls):
+        print(f"[{i}]: {line}")
+
+    print("--" * 100)
 
 
 def main_1():
@@ -46,6 +153,8 @@ def main_1():
     tray.add_wall((5, 0), (5, 3))
     tray.finalize_walls()
 
+    tray.classify_index_walls()
+
     print("-" * 100)
     print("path lines")
     print("-" * 100)
@@ -62,8 +171,6 @@ def main_1():
         print(f"[{i}]: {line}")
 
     print("--" * 100)
-
-    tray.classify_index_walls()
 
     tray.calc_center_to_center_dims()
     tray.calc_center_to_center_points()
@@ -112,4 +219,4 @@ def main_0():
 
 
 if __name__ == "__main__":
-    main_1()
+    main_3()

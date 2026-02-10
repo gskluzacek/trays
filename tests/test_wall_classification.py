@@ -119,11 +119,14 @@ def test_tray_classify_index_walls():
     tray2.classify_index_walls()
 
 
-def test_classify_wall_invalid_orientation():
-    wall = WallLine(Point(0, 0), Point(2, 0))
-    path_line = Line(Point(3, 0), Point(5, 0))
-    with pytest.raises(ValueError, match="orientation must be either vertical or horizontal"):
-        wall.classify_wall(path_line, LineOrientation.NONE)
+# removed test when we refactored code that determines the start and end of a given horizontal or vertical wall
+#   the validation of the orientation is done when we create the wall object
+#
+# def test_classify_wall_invalid_orientation():
+#     wall = WallLine(Point(0, 0), Point(2, 0))
+#     path_line = Line(Point(3, 0), Point(5, 0))
+#     with pytest.raises(ValueError, match="orientation must be either vertical or horizontal"):
+#         wall.classify_wall(path_line, LineOrientation.NONE)
 
 
 def test_classify_wall_unhandled_collinear_configuration():

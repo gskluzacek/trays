@@ -233,7 +233,7 @@ def test_end_base_validation():
     tray3.extend_base(0, 2)  # (0,2) is between (0,3) and (0,1)
     # Lines: (0,0)-(3,0), (3,0)-(3,3), (3,3)-(0,3), (0,3)-(0,1), (0,1)-(2,1), (2,1)-(2,2), (2,2)-(0,2), (0,2)-(0,0)
     # (0,3)-(0,1) and (0,2)-(0,0) overlap!
-    with pytest.raises(ValueError, match="lines within the base path cannot overlap"):
+    with pytest.raises(ValueError, match="lines cannot overlap - Line 1"):
         tray3.end_base()
 
 
@@ -293,7 +293,7 @@ def test_finalize_walls_validation():
     tray.finalize_walls()  # Should pass.
 
     tray.add_wall((0, 1), (1, 1))  # Overlaps with (0,1)-(2,1)
-    with pytest.raises(ValueError, match="Cannot have overlapping walls"):
+    with pytest.raises(ValueError, match="lines cannot overlap - Line 1"):
         tray.finalize_walls()
 
 
@@ -405,7 +405,7 @@ def test_classify_index_wall_unit():
     # 1. EXTERIOR: Wall completely within a path line
     wall_ext = WallLine(Point(1, 0), Point(2, 0))
     assert tray._classify_index_wall(wall_ext, LineOrientation.HORZ) == WallType.EXTERIOR
-    
+
     # Verify that classify_index_walls actually sets the wall_type
     tray.index_walls = [wall_ext]
     tray.classify_index_walls()
