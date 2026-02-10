@@ -44,7 +44,7 @@ class Tray:
             path_orientation = path.horizontal if orientation == LineOrientation.HORZ else path.vertical
 
             for line in path_orientation:
-                wall_type = wall.classify_wall(line, orientation)
+                wall_type = wall.classify_wall(line)
                 wall_types.append(wall_type)
                 print(f"{wall} to {line} <-- {wall_type.name}")
 

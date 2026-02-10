@@ -45,7 +45,8 @@ def test_wall_line_classify_wall():
     wall = WallLine(Point(0, 0), Point(10, 0))
     path_line = Line(Point(2, 0), Point(8, 0))
     # Wall contains path -> COMBO
-    assert wall.classify_wall(path_line, LineOrientation.HORZ) == WallType.COMBO
+    assert wall.classify_wall(path_line) == WallType.COMBO
+
 
 def test_wall_line_repr():
     p1 = Point(0, 0)
@@ -59,14 +60,14 @@ def test_classify_wall_horizontal_interior_disjoint():
     # Wall is completely separate from path
     wall = WallLine(Point(0, 0), Point(2, 0))
     path_line = Line(Point(3, 0), Point(5, 0))
-    assert wall.classify_wall(path_line, LineOrientation.HORZ) == WallType.INTERIOR
+    assert wall.classify_wall(path_line) == WallType.INTERIOR
 
 
 def test_classify_wall_horizontal_interior_touching():
     # Wall is collinear but not overlapping (touching at end)
     wall = WallLine(Point(0, 0), Point(2, 0))
     path_line = Line(Point(2, 0), Point(4, 0))
-    assert wall.classify_wall(path_line, LineOrientation.HORZ) == WallType.INTERIOR
+    assert wall.classify_wall(path_line) == WallType.INTERIOR
 
 
 def test_classify_wall_horizontal_interior_not_collinear():
@@ -74,56 +75,56 @@ def test_classify_wall_horizontal_interior_not_collinear():
     wall = WallLine(Point(0, 1), Point(2, 1))
     path_line = Line(Point(0, 0), Point(2, 0))
     # WallType.INTERIOR is returned if not collinear
-    assert wall.classify_wall(path_line, LineOrientation.HORZ) == WallType.INTERIOR
+    assert wall.classify_wall(path_line) == WallType.INTERIOR
 
 
 def test_classify_wall_horizontal_exterior_within():
     # Wall within path
     wall = WallLine(Point(1, 0), Point(2, 0))
     path_line = Line(Point(0, 0), Point(3, 0))
-    assert wall.classify_wall(path_line, LineOrientation.HORZ) == WallType.EXTERIOR
+    assert wall.classify_wall(path_line) == WallType.EXTERIOR
 
 
 def test_classify_wall_horizontal_exterior_equal():
     # Wall equals path
     wall = WallLine(Point(0, 0), Point(3, 0))
     path_line = Line(Point(0, 0), Point(3, 0))
-    assert wall.classify_wall(path_line, LineOrientation.HORZ) == WallType.EXTERIOR
+    assert wall.classify_wall(path_line) == WallType.EXTERIOR
 
 
 def test_classify_wall_horizontal_exterior_share_end():
     # Wall shares one end and is within path
     wall = WallLine(Point(0, 0), Point(2, 0))
     path_line = Line(Point(0, 0), Point(3, 0))
-    assert wall.classify_wall(path_line, LineOrientation.HORZ) == WallType.EXTERIOR
+    assert wall.classify_wall(path_line) == WallType.EXTERIOR
 
 
 def test_classify_wall_horizontal_combo_partial_overlap():
     # Partial overlap
     wall = WallLine(Point(0, 0), Point(4, 0))
     path_line = Line(Point(2, 0), Point(6, 0))
-    assert wall.classify_wall(path_line, LineOrientation.HORZ) == WallType.COMBO
+    assert wall.classify_wall(path_line) == WallType.COMBO
 
 
 def test_classify_wall_horizontal_combo_contains():
     # Wall contains path
     wall = WallLine(Point(0, 0), Point(5, 0))
     path_line = Line(Point(1, 0), Point(3, 0))
-    assert wall.classify_wall(path_line, LineOrientation.HORZ) == WallType.COMBO
+    assert wall.classify_wall(path_line) == WallType.COMBO
 
 
 def test_classify_wall_vertical_exterior():
     # Exterior
     wall = WallLine(Point(0, 1), Point(0, 2))
     path_line = Line(Point(0, 0), Point(0, 3))
-    assert wall.classify_wall(path_line, LineOrientation.VERT) == WallType.EXTERIOR
+    assert wall.classify_wall(path_line) == WallType.EXTERIOR
 
 
 def test_classify_wall_vertical_interior():
     # Interior
     wall = WallLine(Point(0, 4), Point(0, 5))
     path_line = Line(Point(0, 0), Point(0, 3))
-    assert wall.classify_wall(path_line, LineOrientation.VERT) == WallType.INTERIOR
+    assert wall.classify_wall(path_line) == WallType.INTERIOR
 
 
 def test_classify_wall_vertical_combo():
@@ -131,11 +132,12 @@ def test_classify_wall_vertical_combo():
     # shift everything up by 1 to avoid negative coordinates
     wall = WallLine(Point(0, 0), Point(0, 3))
     path_line = Line(Point(0, 1), Point(0, 4))
-    assert wall.classify_wall(path_line, LineOrientation.VERT) == WallType.COMBO
+    assert wall.classify_wall(path_line) == WallType.COMBO
 
 
 def test_classify_wall_unhandled_collinear_configuration():
     from unittest.mock import patch, PropertyMock
+
     wall = WallLine(Point(0, 0), Point(2, 0))
     path_line = Line(Point(0, 0), Point(2, 0))
 
@@ -143,4 +145,4 @@ def test_classify_wall_unhandled_collinear_configuration():
         with patch.object(WallLine, "normalize", new_callable=PropertyMock) as mock_normalize:
             mock_normalize.side_effect = [(Point(float("nan"), 0), Point(float("nan"), 0)), (Point(0, 0), Point(1, 0))]
             with pytest.raises(ValueError, match="Unhandled collinear configuration"):
-                wall.classify_wall(path_line, LineOrientation.HORZ)
+                wall.classify_wall(path_line)

@@ -43,7 +43,7 @@ class Point(Generic[T]):
         return None
 
     def _cmp_key(self) -> tuple[float, float]:
-        return (float(self.x), float(self.y))
+        return float(self.x), float(self.y)
 
     def __eq__(self, other: object) -> NotImplementedType | bool:
         coerced = self._coerce(other)

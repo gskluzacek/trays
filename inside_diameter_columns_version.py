@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from tray.geometry.point import Point
 from tray.tray import Tray
 
 

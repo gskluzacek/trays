@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from enum import IntEnum
 from typing import TypeVar, SupportsFloat
-from tray.geometry.line import Line, LineOrientation, Point
+from tray.geometry.line import Line, Point
 
 T = TypeVar("T", bound=SupportsFloat)
 
@@ -35,7 +35,7 @@ class WallLine(Line[T]):
     def __str__(self) -> str:
         return f"[{self.p1}, {self.p2}, {self.orientation}, {self.wall_type.label}]"
 
-    def classify_wall(self, path_line: Line[T], orientation: LineOrientation) -> WallType:
+    def classify_wall(self, path_line: Line[T]) -> WallType:
         w1_val, w2_val = self.start_end
         p1_val, p2_val = path_line.start_end
 

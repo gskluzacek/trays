@@ -165,7 +165,7 @@ There is no need to adjust the mating surface clearance.
 This use case is found when:
 
 1. we have a `cross` intersection: the 2 cut surfaces between the short (length = material thickness) horizontal cuts (
-   one on each wall forming the cross instersection)
+   one on each wall forming the cross intersection)
 
 ### T3: two pairs of cut surfaces mating with each other
 

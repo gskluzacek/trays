@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import TypeVar, SupportsFloat
-from tray.geometry.line import Line, LineOrientation, Point
+from tray.geometry.line import Line, Point
 
 T = TypeVar("T", bound=SupportsFloat)
 
