@@ -16,6 +16,7 @@ T = TypeVar("T", bound=SupportsFloat)
 class Tray:
     def __init__(self, material_thickness: float, inside_dim_cols: list[float], inside_dim_rows: list[float]):
         self.index_paths: list[Path[int]] = []
+        self.final_index_paths: list[Path[float]] = []
         self.index_walls: list[WallLine[int]] = []
 
         self.material_thickness: float = material_thickness
@@ -37,7 +38,7 @@ class Tray:
 
     def _classify_index_wall(self, wall: WallLine[int], orientation: LineOrientation) -> WallType:
         wall_types = []
-        wall_segments = []
+        # wall_segments = []
         wall_type = WallType.NONE
 
         for path in self.index_paths:
@@ -49,13 +50,13 @@ class Tray:
                 print(f"{wall} to {line} <-- {wall_type.name}")
 
                 if wall_type == WallType.COMBO or wall_type == WallType.EXTERIOR:
-                    for endpoint in wall.wall_inside_path(line):
-                        line.add_break(endpoint)
+                    for point in wall.wall_inside_path(line):
+                        line.add_break(point)
 
-                if wall_type == WallType.COMBO:
-                    ...
-                    # wall_segment = wall.path_inside_wall(line)
-                    # wall_segments.append(wall_segment)
+                # if wall_type == WallType.COMBO:
+                #     ...
+                # wall_segment = wall.path_inside_wall(line)
+                # wall_segments.append(wall_segment)
 
         if wall_type == WallType.NONE:
             raise ValueError("no wall type found for this wall")
@@ -199,3 +200,14 @@ class Tray:
         for index_path in self.index_paths:
             for p1, p2 in cyclic_n_tuples(index_path.points, 2, 0):
                 self.add_wall(p1.coords, p2.coords)
+
+    def split_path_lines(self):
+        for index_path in self.index_paths:
+            new_path = Path[int]()
+            for line in index_path.lines:
+                new_path.add_point(line.p1)
+                for path_break in sorted(line.path_breaks, reverse=line.p1 > line.p2):
+                    new_path.add_point(path_break)
+            new_path.set_orientation()
+            new_path.finalize()
+            self.final_index_paths.append(new_path)

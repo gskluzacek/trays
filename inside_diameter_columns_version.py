@@ -91,11 +91,21 @@ def main_2():
 
     tray.classify_index_walls()
 
+    tray.split_path_lines()
+
     print("-" * 100)
     print("path lines")
     print("-" * 100)
 
     for i, index_path in enumerate(tray.index_paths):
+        for j, line in enumerate(index_path.lines):
+            print(f"[{i} {j}]: {line}")
+
+    print("-" * 100)
+    print("Final path lines")
+    print("-" * 100)
+
+    for i, index_path in enumerate(tray.final_index_paths):
         for j, line in enumerate(index_path.lines):
             print(f"[{i} {j}]: {line}")
 
@@ -218,4 +228,4 @@ def main_0():
 
 
 if __name__ == "__main__":
-    main_3()
+    main_2()

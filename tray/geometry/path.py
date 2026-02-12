@@ -9,6 +9,7 @@ from tray.geometry.line import Line, LineOrientation
 from cyclic_n_tuples import fwd_n_tuple, cyclic_n_tuples
 
 T = TypeVar("T", bound=SupportsFloat)
+# L = TypeVar("L", bound="Line")
 
 
 class Path(Generic[T]):
@@ -32,11 +33,11 @@ class Path(Generic[T]):
         return map(lambda pt: (pt.x, pt.y), self.points)
 
     @property
-    def horizontal(self) -> Iterator[Line[T]]:
+    def horizontal(self) -> Iterator[PathLine[T]]:
         return Line.of_orientation(self.lines, LineOrientation.HORZ)
 
     @property
-    def vertical(self) -> Iterator[Line[T]]:
+    def vertical(self) -> Iterator[PathLine[T]]:
         return Line.of_orientation(self.lines, LineOrientation.VERT)
 
     def add_point(self, point: Point[T]) -> None:

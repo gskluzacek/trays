@@ -45,18 +45,40 @@ class Line(Generic[T]):
 
     @property
     def start_end(self) -> tuple[T, T]:
-        p1, p2 = self.normalize
-        if self.is_horizontal:
-            return p1.x, p2.x
-        return p1.y, p2.y
+        """
+        Retrieve the start and end coordinates of the line segment based on its orientation.
 
-    def wall_inside_path(self, other: Line[T]) -> list[T]:
-        # return a list of endpoints from the wall-line that are inside the path-line
-        # this list could be empty, have just one endpoint, or have two endpoints
-        # additionally, the wall-line endpoints must be strictly inside the path-line
-        # if the endpoints are only touching each other, they are not inside
-        # an endpoint is just a number - it is not x, y coordinates
-        # self is the wall-ine and other is the path-line
+        This property calculates and returns the endpoints of a line segment after normalization.
+        If the line segment is horizontal, it returns the x-coordinates of the start and end points.
+        If the line segment is vertical, it returns the y-coordinates of the start and end points.
+
+        :return: The start and end coordinates as a tuple
+        :rtype: tuple[T, T]
+        """
+        p1, p2 = self.normalize
+        return (p1.x, p2.x) if self.is_horizontal else (p1.y, p2.y)
+
+    def point_from_line(self, value: T) -> Point[T]:
+        """
+        Generate a point on the line using the specified value. If the line is horizontal,
+        the point's x-coordinate will be set to the provided value. Otherwise, the line is
+        vertical, and the y-coordinate will be set to the given value.
+
+        :param value: The value to replace either the x-coordinate (if the line is vertical)
+                      or the y-coordinate (if the line is horizontal) in order to generate
+                      the point.
+        :type value: T
+        :return: A new point on the line based on the provided value.
+        :rtype: Point[T]
+        """
+        return Point(value, self.p1.y) if self.is_horizontal else Point(self.p1.x, value)
+
+    def wall_inside_path(self, other: Line[T]) -> list[Point[T]]:
+        # return a list of points from the wall-line that are inside the path-line
+        # this list could be empty, have just one point, or have two points
+        # additionally, the wall-line points must be strictly inside the path-line
+        # if the points are only touching each other, they are not inside
+        # self is the wall-line and other is the path-line
         # start_end will take care of the normalization of the points and checking the orientation
         # the 2 lines must be the collinear (and the same orientation)
 
@@ -66,7 +88,7 @@ class Line(Generic[T]):
         w1, w2 = self.start_end
         p1, p2 = other.start_end
 
-        return [w for w in (w1, w2) if p1 < w < p2]
+        return [self.point_from_line(w) for w in (w1, w2) if p1 < w < p2]
 
     @staticmethod
     def _intervals_overlap(lo1: T, hi1: T, lo2: T, hi2: T) -> bool:
