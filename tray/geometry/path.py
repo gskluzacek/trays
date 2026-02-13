@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Generic, SupportsFloat, TypeVar
 
-from tray.geometry.path_line import PathLine
 from tray.geometry.point import Point, PathOrientation
 from cyclic_n_tuples import fwd_n_tuple
 

@@ -96,51 +96,6 @@ class Line(Generic[T]):
             return line_pt_1.x < point.x < line_pt_2.x
         return line_pt_1.y < point.y < line_pt_2.y
 
-    # TODO: after commiting these changes, remove the *_1 versions
-    @staticmethod
-    def _intervals_overlap_1(lo1: T, hi1: T, lo2: T, hi2: T) -> bool:
-        """
-        Determines whether two intervals overlap. This static method performs comparison
-        to check if one interval lies completely outside the other or if they share
-        any overlapping range.
-
-        :param lo1: The lower bound of the first interval
-        :type lo1: T
-        :param hi1: The upper bound of the first interval
-        :type hi1: T
-        :param lo2: The lower bound of the second interval
-        :type lo2: T
-        :param hi2: The upper bound of the second interval
-        :type hi2: T
-        :return: True if the intervals overlap, otherwise False
-        :rtype: bool
-        """
-        # return not (hi1 <= lo2 or hi2 <= lo1)
-        return hi1 > lo2 and hi2 > lo1
-
-    def is_overlapping_1(self, other: Line[T]) -> bool:
-        """
-        Determines whether the current line overlaps with another line. Overlapping is
-        checked only for lines with the same orientation and that are collinear. If the
-        lines are vertical, the overlap is checked based on their y-coordinates;
-        otherwise, it is checked based on their x-coordinates.
-
-        NOTE: if only the end point touch then the lines are NOT overlapping
-
-        :param other: The line to check for overlap with the current line.
-        :type other: Line[T]
-        :return: True if the lines overlap, otherwise False.
-        :rtype: bool
-        """
-        if self.orientation != other.orientation or not self.is_collinear(other):
-            return False
-        line_1_pt_1, line_1_pt_2 = self.normalize
-        line_2_pt_1, line_2_pt_2 = other.normalize
-        if self.is_vertical:
-            return self._intervals_overlap_1(line_1_pt_1.y, line_1_pt_2.y, line_2_pt_1.y, line_2_pt_2.y)
-        # horizontal
-        return self._intervals_overlap_1(line_1_pt_1.x, line_1_pt_2.x, line_2_pt_1.x, line_2_pt_2.x)
-
     @staticmethod
     def _intervals_overlap(line_1: Line[T], line_2: Line[T]) -> bool:
         """
