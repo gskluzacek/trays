@@ -7,6 +7,7 @@ from itertools import combinations
 from tray.geometry.point import Point
 from tray.geometry.line import Line, LineOrientation
 from tray.geometry.wall_line import WallLine, WallType
+from tray.geometry.base_path import BasePath
 from tray.geometry.path import Path
 from cyclic_n_tuples import cyclic_n_tuples
 
@@ -15,8 +16,8 @@ T = TypeVar("T", bound=SupportsFloat)
 
 class Tray:
     def __init__(self, material_thickness: float, inside_dim_cols: list[float], inside_dim_rows: list[float]):
-        self.index_paths: list[Path[int]] = []
-        self.final_index_paths: list[Path[float]] = []
+        self.index_paths: list[BasePath[int]] = []
+        self.final_index_paths: list[BasePath[int]] = []
         self.index_walls: list[WallLine[int]] = []
 
         self.material_thickness: float = material_thickness
@@ -36,18 +37,18 @@ class Tray:
     def ndx_walls_as_tuples(self) -> Iterator[tuple[T, T, T, T]]:
         return map(lambda wall: (wall.p1.x, wall.p1.y, wall.p2.x, wall.p2.y), self.index_walls)
 
-    def _classify_index_wall(self, wall: WallLine[int], orientation: LineOrientation) -> WallType:
+    def _classify_index_wall(self, wall: WallLine[int]) -> WallType:
         wall_types = []
         # wall_segments = []
         wall_type = WallType.NONE
 
         for path in self.index_paths:
-            path_orientation = path.horizontal if orientation == LineOrientation.HORZ else path.vertical
+            path_orientation = path.horizontal if wall.orientation == LineOrientation.HORZ else path.vertical
 
             for line in path_orientation:
                 wall_type = wall.classify_wall(line)
                 wall_types.append(wall_type)
-                print(f"{wall} to {line} <-- {wall_type.name}")
+                # print(f"{wall} to {line} <-- {wall_type.name}")
 
                 if wall_type == WallType.COMBO or wall_type == WallType.EXTERIOR:
                     for point in wall.wall_inside_path(line):
@@ -71,7 +72,7 @@ class Tray:
 
     def _classify_index_walls(self, orientation: LineOrientation):
         for wall in Line.of_orientation(self.index_walls, orientation):
-            wall_type = self._classify_index_wall(wall, orientation)
+            wall_type = self._classify_index_wall(wall)
             wall.wall_type = wall_type
 
     def classify_index_walls(self):
@@ -126,7 +127,7 @@ class Tray:
             )
 
         index_pt = Point[int](x_index, y_index)
-        index_path = Path[int](index_pt)
+        index_path = BasePath[int](index_pt)
         self.index_paths.append(index_path)
 
     def extend_base(self, x_index: int, y_index: int) -> None:
@@ -203,7 +204,7 @@ class Tray:
 
     def split_path_lines(self):
         for index_path in self.index_paths:
-            new_path = Path[int]()
+            new_path = BasePath[int]()
             for line in index_path.lines:
                 new_path.add_point(line.p1)
                 for path_break in sorted(line.path_breaks, reverse=line.p1 > line.p2):
@@ -211,3 +212,25 @@ class Tray:
             new_path.set_orientation()
             new_path.finalize()
             self.final_index_paths.append(new_path)
+
+    def _generate_wall_segments(self, wall: WallLine[int]):
+        for path in self.final_index_paths:
+            path_lines = path.horizontal if wall.orientation == LineOrientation.HORZ else path.vertical
+
+            segment_points = []
+            for path_line in path_lines:
+                # TODO: we should add a check to see if the wall type is combo
+                # note is_overlapping already checks if the lines are collinear, so no need to check here
+                if path_line.is_overlapping(wall):
+                    # TODO: need to figure out logic to determine the joint type of every wall segment
+                    segment_points.extend([pt for pt in path_line.normalize if wall.is_between(pt)])
+
+            wall.segments.points = [wall.p1] + sorted(segment_points) + [wall.p2]
+
+    def _generate_walls_segments(self, orientation: LineOrientation):
+        for wall in Line.of_orientation(self.index_walls, orientation):
+            self._generate_wall_segments(wall)
+
+    def generate_walls_segments(self):
+        self._generate_walls_segments(LineOrientation.HORZ)
+        self._generate_walls_segments(LineOrientation.VERT)

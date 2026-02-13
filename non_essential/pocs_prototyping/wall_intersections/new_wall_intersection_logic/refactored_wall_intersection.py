@@ -231,7 +231,7 @@ class Wall(Generic[T]):
         if ih.corner:
             return IntrxnType.CORNER, ih.corner_type, ipt
 
-        # Tee: on an endpoint of exactly one segment and strictly inside the other.
+        # Tee: an endpoint of one segment is strictly inside the other.
         if ih.tee:
             return IntrxnType.TEE, ih.tee_type, ipt
 

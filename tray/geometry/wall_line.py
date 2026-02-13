@@ -3,6 +3,7 @@ from __future__ import annotations
 from enum import IntEnum
 from typing import TypeVar, SupportsFloat
 from tray.geometry.line import Line, Point
+from tray.geometry.path import Path
 
 T = TypeVar("T", bound=SupportsFloat)
 
@@ -28,6 +29,7 @@ class WallLine(Line[T]):
     def __init__(self, p1: Point[T], p2: Point[T], wall_type: WallType = WallType.NONE) -> None:
         super().__init__(p1, p2)
         self.wall_type: WallType = wall_type
+        self.segments = Path[T]()
 
     def __repr__(self) -> str:
         return f"Line(p1={self.p1!r}, p2={self.p2!r}, type={self.orientation!r}, wall_type={self.wall_type!r})"

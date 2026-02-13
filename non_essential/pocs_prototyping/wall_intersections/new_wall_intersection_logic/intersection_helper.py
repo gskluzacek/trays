@@ -445,6 +445,25 @@ class IntersectHelper:
 
     @staticmethod
     def _start_end(start: T, end: T, value: T) -> tuple[bool, bool]:
+        """
+        Checks if a given value matches the start or end of a range.
+
+        This method is a static utility function that evaluates whether the
+        provided ``value`` matches either the ``start`` or ``end`` boundaries.
+        It returns a tuple where the first element indicates if ``value`` matches
+        ``start``, and the second element indicates if ``value`` matches ``end``.
+
+        :param start: The starting boundary of the range to check.
+        :type start: T
+        :param end: The ending boundary of the range to check.
+        :type end: T
+        :param value: The value to check against the range boundaries.
+        :type value: T
+        :return: A tuple containing two boolean values. The first boolean indicates
+            whether ``value`` matches ``start``, and the second indicates whether
+            ``value`` matches ``end``.
+        :rtype: tuple[bool, bool]
+        """
         return value == start, value == end
 
     @property

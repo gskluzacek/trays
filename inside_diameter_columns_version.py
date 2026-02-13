@@ -38,6 +38,8 @@ def main_3():
 
     tray.finalize_walls()
     tray.classify_index_walls()
+    tray.split_path_lines()
+    tray.generate_walls_segments()
 
     print("-" * 100)
     print("path lines")
@@ -88,10 +90,9 @@ def main_2():
     tray.add_wall((3, 1), (3, 3))
 
     tray.finalize_walls()
-
     tray.classify_index_walls()
-
     tray.split_path_lines()
+    tray.generate_walls_segments()
 
     print("-" * 100)
     print("path lines")
@@ -228,4 +229,4 @@ def main_0():
 
 
 if __name__ == "__main__":
-    main_2()
+    main_3()
