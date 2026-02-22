@@ -1,31 +1,40 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
-from typing import Generic, SupportsFloat, TypeVar
+from typing import Protocol, SupportsFloat, TypeVar
 
-from tray.geometry.point import Point, PathOrientation
 from cyclic_n_tuples import fwd_n_tuple
+
+from tray.geometry.basic.point import Point
+from tray.geometry.types.geometric import PathOrientation
 
 T = TypeVar("T", bound=SupportsFloat)
 
 
-class Path(Generic[T]):
+class HasPoints(Protocol[T]):
+    points: list[Point[T]]
+
+
+class PathOrientationMixin:
+    """
+    Mixin that adds:
+      - self.orientation: PathOrientation
+      - set_orientation(): determines CW/CCW from self.points
+
+    Requirements:
+      - The consuming class must define: self.points: list[Point[T]]
+      - The consuming class should be cooperative with super().__init__.
+    """
+
     def __init__(
         self,
-        start_point: Point[T] | None = None,
+        *args,
         orientation: PathOrientation = PathOrientation.NONE,
+        **kwargs,
     ) -> None:
-        self.points: list[Point[T]] = [start_point] if start_point else []
+        super().__init__(*args, **kwargs)
         self.orientation: PathOrientation = orientation
 
-    @property
-    def points_as_tuples(self) -> Iterator[tuple[T, T]]:
-        return map(lambda pt: (pt.x, pt.y), self.points)
-
-    def add_point(self, point: Point[T]) -> None:
-        self.points.append(point)
-
-    def set_orientation(self) -> None:
+    def set_orientation(self: HasPoints[T]) -> None:
         if len(self.points) < 3:
             raise ValueError(
                 f"could not determine the path's orientation (clockwise or counter clockwise). please check that you have 3 or more points in your path. Path len: {len(self.points)}"

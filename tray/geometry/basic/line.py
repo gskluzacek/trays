@@ -1,19 +1,13 @@
 from __future__ import annotations
 
 import functools
-from enum import Enum
 from collections.abc import Iterator, Sequence
 from typing import Generic, SupportsFloat, TypeVar
-from tray.geometry.point import Point
+from tray.geometry.basic.point import Point
+from tray.geometry.types.geometric import LineOrientation
 
 T = TypeVar("T", bound=SupportsFloat)
 L = TypeVar("L", bound="Line")
-
-
-class LineOrientation(Enum):
-    VERT = "vertical"
-    HORZ = "horizontal"
-    NONE = "none"
 
 
 class Line(Generic[T]):
@@ -90,11 +84,15 @@ class Line(Generic[T]):
 
         return [self.point_from_line(w) for w in (w1, w2) if p1 < w < p2]
 
-    def is_between(self, point: Point[T]) -> bool:
-        line_pt_1, line_pt_2 = self.normalize
-        if self.is_horizontal:
-            return line_pt_1.x < point.x < line_pt_2.x
-        return line_pt_1.y < point.y < line_pt_2.y
+    #
+    # moved to Point class to make usage more intuitive
+    #
+    # def is_between(self, point: Point[T]) -> bool:
+    #     line_pt_1, line_pt_2 = self.normalize
+    #     if self.is_horizontal:
+    #         return line_pt_1.x < point.x < line_pt_2.x
+    #     return line_pt_1.y < point.y < line_pt_2.y
+    #
 
     @staticmethod
     def _intervals_overlap(line_1: Line[T], line_2: Line[T]) -> bool:

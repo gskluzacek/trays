@@ -1,7 +1,7 @@
 import pytest
-from tray.geometry.point import Point, PathOrientation
-from tray.geometry.line import LineOrientation
-from tray.geometry.path import Path
+from tray.geometry.basic.point import Point
+from tray.geometry.types.geometric import LineOrientation
+from tray.geometry.basic.path import Path, PathOrientation
 
 
 def test_path_init_empty():
@@ -185,8 +185,10 @@ def test_path_vertical_properties():
     assert vert_lines[1].p1.coords == (0, 10)
     assert vert_lines[1].p2.coords == (0, 0)
 
+
 def test_path_line_repr():
-    from tray.geometry.path_line import PathLine
+    from tray.geometry.base.path_line import PathLine
+
     p1 = Point(0, 0)
     p2 = Point(10, 0)
     pl = PathLine(p1, p2)

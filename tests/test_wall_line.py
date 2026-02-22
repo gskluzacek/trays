@@ -1,8 +1,10 @@
 from __future__ import annotations
 import pytest
-from tray.geometry.point import Point
-from tray.geometry.line import Line, LineOrientation
-from tray.geometry.wall_line import WallLine, WallType
+from tray.geometry.basic.point import Point
+from tray.geometry.basic.line import Line
+from tray.geometry.types.tray import WallType
+from tray.geometry.types.geometric import LineOrientation
+from tray.geometry.wall_line import WallLine
 
 
 def test_wall_line_init():

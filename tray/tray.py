@@ -4,21 +4,27 @@ from collections.abc import Iterator
 from typing import TypeVar, SupportsFloat
 from itertools import combinations
 
-from tray.geometry.point import Point
-from tray.geometry.line import Line, LineOrientation
-from tray.geometry.wall_line import WallLine, WallType
-from tray.geometry.base_path import BasePath
-from tray.geometry.path import Path
-from cyclic_n_tuples import cyclic_n_tuples
+from cyclic_n_tuples import cyclic_n_tuples, fwd_pair
+from tray.geometry.final_base.final_path_line import FinalPathLine
+
+from tray.geometry.types.tray import WallType, JointType
+from tray.geometry.types.geometric import LineOrientation
+from tray.geometry.basic.point import Point
+from tray.geometry.basic.line import Line
+from tray.geometry.basic.path import Path
+from tray.geometry.segment.segment_point import SegmentPoint
+from tray.geometry.wall_line import WallLine
+from tray.geometry.base.base_path import BasePath
+from tray.geometry.final_base.final_base_path import FinalBasePath
 
 T = TypeVar("T", bound=SupportsFloat)
 
 
 class Tray:
     def __init__(self, material_thickness: float, inside_dim_cols: list[float], inside_dim_rows: list[float]):
-        self.index_paths: list[BasePath[int]] = []
-        self.final_index_paths: list[BasePath[int]] = []
-        self.index_walls: list[WallLine[int]] = []
+        self.index_paths: list[BasePath] = []
+        self.final_index_paths: list[FinalBasePath] = []
+        self.index_walls: list[WallLine] = []
 
         self.material_thickness: float = material_thickness
 
@@ -37,7 +43,7 @@ class Tray:
     def ndx_walls_as_tuples(self) -> Iterator[tuple[T, T, T, T]]:
         return map(lambda wall: (wall.p1.x, wall.p1.y, wall.p2.x, wall.p2.y), self.index_walls)
 
-    def _classify_index_wall(self, wall: WallLine[int]) -> WallType:
+    def _classify_index_wall(self, wall: WallLine) -> WallType:
         wall_types = []
         # wall_segments = []
         wall_type = WallType.NONE
@@ -106,7 +112,7 @@ class Tray:
 
     def calc_center_to_center_paths(self):
         for index_path in self.index_paths:
-            center_to_center_path = Path[float](orientation=index_path.orientation)
+            center_to_center_path = Path[float]()
             for ndx_px, ndx_py in index_path.points_as_tuples:
                 center_to_center_path.add_point(self.center_to_center_points[ndx_py][ndx_px])
             self.center_to_center_paths.append(center_to_center_path)
@@ -127,7 +133,7 @@ class Tray:
             )
 
         index_pt = Point[int](x_index, y_index)
-        index_path = BasePath[int](index_pt)
+        index_path = BasePath(index_pt)
         self.index_paths.append(index_path)
 
     def extend_base(self, x_index: int, y_index: int) -> None:
@@ -191,7 +197,7 @@ class Tray:
             )
         index_pt_1 = Point[int](*start_indexes)
         index_pt_2 = Point[int](*end_indexes)
-        index_wall = WallLine[int](index_pt_1, index_pt_2)
+        index_wall = WallLine(index_pt_1, index_pt_2)
         self.index_walls.append(index_wall)
 
     def finalize_walls(self):
@@ -204,32 +210,65 @@ class Tray:
 
     def split_path_lines(self):
         for index_path in self.index_paths:
-            new_path = BasePath[int]()
+            new_path = FinalBasePath()
             for line in index_path.lines:
                 new_path.add_point(line.p1)
-                for path_break in sorted(line.path_breaks, reverse=line.p1 > line.p2):
+                for path_break in sorted(line.line_breaks, reverse=line.p1 > line.p2):
                     new_path.add_point(path_break)
             new_path.set_orientation()
             new_path.finalize()
             self.final_index_paths.append(new_path)
 
-    def _generate_wall_segments(self, wall: WallLine[int]):
-        for path in self.final_index_paths:
-            path_lines = path.horizontal if wall.orientation == LineOrientation.HORZ else path.vertical
+    @staticmethod
+    def _does_wall_line_start_first(line1: WallLine, line2: FinalPathLine) -> bool:
+        """
+        Determines if the wall line starts before the final path line based on their
+        normalized positions and alignment.
 
-            segment_points = []
+        IMPORTANT: The Wall Line and Path Line need to be collinear and (partially) overlapping to
+        have a chance of returning True.
+
+        :param line1: The wall line to compare.
+        :type line1: WallLine
+        :param line2: The final path line to compare.
+        :type line2: FinalPathLine
+        :return: True if the wall line starts before the final path line, otherwise False.
+        :rtype: bool
+        """
+        line1_p1, line1_p2 = line1.normalize
+        line2_p1, line2_p2 = line2.normalize
+        if line1.is_horizontal:
+            return line1_p1.x < line2_p1.x
+        return line1_p1.y < line2_p1.y
+
+    def _generate_wall_segments(self, wall: WallLine):
+        segment_points: list[SegmentPoint] = []
+        for path in self.final_index_paths:
+            path_lines = path.horizontal if wall.is_horizontal else path.vertical
+
             for path_line in path_lines:
-                # TODO: we should add a check to see if the wall type is combo
                 # note is_overlapping already checks if the lines are collinear, so no need to check here
                 if path_line.is_overlapping(wall):
-                    # TODO: need to figure out logic to determine the joint type of every wall segment
-                    segment_points.extend([pt for pt in path_line.normalize if wall.is_between(pt)])
+                    # we check both P1 and P2 of path_line to see if they are between wall's points
+                    segment_points.extend([pt for pt in path_line.points_from_line if pt.is_between(wall)])
 
-            wall.segments.points = [wall.p1] + sorted(segment_points) + [wall.p2]
+        segment_points.sort()
+        points = [wall.p1] + [pt.to_point for pt in segment_points] + [wall.p2]
+        wall.segment_path.points = points
+
+        path_line_1 = segment_points[0].line
+        first_joint_type = 0 if self._does_wall_line_start_first(wall, path_line_1) else 1
+
+        joints = [JointType.TS, JointType.FS]
+        for i, (p1, p2) in enumerate(fwd_pair(points)):
+            joint_type = joints[(i + first_joint_type) % 2]
+            wall.segment_path.add_segment(p1, p2, joint_type)
 
     def _generate_walls_segments(self, orientation: LineOrientation):
         for wall in Line.of_orientation(self.index_walls, orientation):
-            self._generate_wall_segments(wall)
+            # TODO: I'm thinking to keep Walls of all types implemented in consistently to run the _generate_wall_segments for all types
+            if wall.wall_type == WallType.COMBO:
+                self._generate_wall_segments(wall)
 
     def generate_walls_segments(self):
         self._generate_walls_segments(LineOrientation.HORZ)

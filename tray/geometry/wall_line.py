@@ -1,35 +1,16 @@
 from __future__ import annotations
 
-from enum import IntEnum
-from typing import TypeVar, SupportsFloat
-from tray.geometry.line import Line, Point
-from tray.geometry.path import Path
-
-T = TypeVar("T", bound=SupportsFloat)
+from tray.geometry.types.tray import WallType
+from tray.geometry.basic.line import Line, Point
+from tray.geometry.base.path_line import PathLine
+from tray.geometry.segment.segment_path import SegmentPath
 
 
-class WallType(IntEnum):
-    def __new__(cls, value: int, label: str):
-        obj = int.__new__(cls, value)  # create the enum member as an int
-        obj._value_ = value
-        obj._label_ = label
-        return obj
-
-    NONE = (0, "none")
-    INTERIOR = (1, "interior")
-    EXTERIOR = (2, "exterior")
-    COMBO = (3, "combo")
-
-    @property
-    def label(self) -> str:
-        return self._label_
-
-
-class WallLine(Line[T]):
-    def __init__(self, p1: Point[T], p2: Point[T], wall_type: WallType = WallType.NONE) -> None:
+class WallLine(Line[int]):
+    def __init__(self, p1: Point[int], p2: Point[int], wall_type: WallType = WallType.NONE) -> None:
         super().__init__(p1, p2)
         self.wall_type: WallType = wall_type
-        self.segments = Path[T]()
+        self.segment_path: SegmentPath = SegmentPath()
 
     def __repr__(self) -> str:
         return f"Line(p1={self.p1!r}, p2={self.p2!r}, type={self.orientation!r}, wall_type={self.wall_type!r})"
@@ -37,7 +18,7 @@ class WallLine(Line[T]):
     def __str__(self) -> str:
         return f"[{self.p1}, {self.p2}, {self.orientation}, {self.wall_type.label}]"
 
-    def classify_wall(self, path_line: Line[T]) -> WallType:
+    def classify_wall(self, path_line: PathLine) -> WallType:
         w1_val, w2_val = self.start_end
         p1_val, p2_val = path_line.start_end
 

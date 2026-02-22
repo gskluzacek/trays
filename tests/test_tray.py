@@ -1,8 +1,9 @@
 import pytest
 from tray.tray import Tray
-from tray.geometry.point import Point, PathOrientation
-from tray.geometry.line import LineOrientation
-from tray.geometry.wall_line import WallLine, WallType
+from tray.geometry.basic.point import Point
+from tray.geometry.basic.path import PathOrientation
+from tray.geometry.wall_line import WallLine
+from tray.geometry.types.tray import WallType
 
 
 def test_tray_init():
@@ -72,7 +73,7 @@ def test_base_management():
     # End base
     tray.end_base()
     assert tray.index_paths[0].orientation == PathOrientation.CW
-    assert len(tray.index_paths[0].lines) == 4
+    assert len(tray.index_paths[0].path_lines) == 4
 
 
 def test_calc_center_to_center_paths():
@@ -390,7 +391,7 @@ def test_classify_index_wall_unit():
 
     # 1. EXTERIOR: Wall completely within a path line
     wall_ext = WallLine(Point(1, 0), Point(2, 0))
-    assert tray._classify_index_wall(wall_ext, LineOrientation.HORZ) == WallType.EXTERIOR
+    assert tray._classify_index_wall(wall_ext) == WallType.EXTERIOR
 
     # Verify that classify_index_walls actually sets the wall_type
     tray.index_walls = [wall_ext]
@@ -399,7 +400,7 @@ def test_classify_index_wall_unit():
 
     # 2. INTERIOR: Wall not collinear with any path line
     wall_int = WallLine(Point(0, 1), Point(3, 1))
-    assert tray._classify_index_wall(wall_int, LineOrientation.HORZ) == WallType.INTERIOR
+    assert tray._classify_index_wall(wall_int) == WallType.INTERIOR
 
     # 3. COMBO: Wall partially overlapping path line
     # Add another path to create combo situation
@@ -426,7 +427,7 @@ def test_classify_index_wall_unit():
     # Path 1 has (0,0)-(2,0) -> Wall is EXTERIOR
     # Path 2 has (0,0)-(1,0) -> Wall is COMBO
     with pytest.raises(ValueError, match="wall type cannot be both combo and exterior"):
-        tray_conflict_3._classify_index_wall(wall_test, LineOrientation.HORZ)
+        tray_conflict_3._classify_index_wall(wall_test)
 
     # To get COMBO as result, we need COMBO and INTERIOR (or just COMBO)
     tray3 = Tray(material_thickness, [100.0, 100.0], [100.0, 100.0, 100.0])
@@ -443,12 +444,12 @@ def test_classify_index_wall_unit():
     # Against Path line (0,0)-(1,0): COMBO (contains it)
     # Against other path lines: INTERIOR
     # Result: COMBO
-    assert tray3._classify_index_wall(wall_test, LineOrientation.HORZ) == WallType.COMBO
+    assert tray3._classify_index_wall(wall_test) == WallType.COMBO
 
     # 4. Error: No wall type found (no paths)
     tray_empty = Tray(material_thickness, inside_dim_cols, inside_dim_rows)
     with pytest.raises(ValueError, match="no wall type found for this wall"):
-        tray_empty._classify_index_wall(wall_ext, LineOrientation.HORZ)
+        tray_empty._classify_index_wall(wall_ext)
 
 
 def test_tray_classify_index_walls():

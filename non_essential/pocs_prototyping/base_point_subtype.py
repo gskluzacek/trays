@@ -1,5 +1,5 @@
-from tray.geometry.point import Point
-from tray.geometry.path import Path
+from tray.geometry.basic.point import Point
+from tray.geometry.basic.path import Path
 
 
 class BasePoint(Point):

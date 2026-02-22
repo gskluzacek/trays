@@ -1,21 +1,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
 
 from types import NotImplementedType
-from typing import Any, Generic, SupportsFloat, TypeVar
+from typing import Any, Generic, SupportsFloat, TypeVar, TYPE_CHECKING
 from contextlib import suppress
 
+from tray.geometry.types.geometric import PathOrientation
+
+if TYPE_CHECKING:
+    from tray.geometry.basic.line import Line
 
 T = TypeVar("T", bound=SupportsFloat)
-
-
-class PathOrientation(Enum):
-    CW = "clockwise"
-    CCW = "counter_clockwise"
-    COL = "collinear"
-    NONE = "none"
 
 
 @dataclass(frozen=True, slots=True)
@@ -89,3 +85,9 @@ class Point(Generic[T]):
 
     def is_orthogonal(self, other: Point[T]) -> bool:
         return (self.y == other.y or self.x == other.x) and self != other
+
+    def is_between(self, line: Line[T]) -> bool:
+        line_pt_1, line_pt_2 = line.normalize
+        if line.is_horizontal:
+            return line_pt_1.x < self.x < line_pt_2.x
+        return line_pt_1.y < self.y < line_pt_2.y
