@@ -1,6 +1,6 @@
 import pytest
 from tray.geometry.basic.point import Point
-from tray.geometry.basic.path import PathOrientation
+from tray.geometry.types.geometric import PathOrientation
 
 
 def test_point_init():
@@ -171,3 +171,27 @@ def test_point_gt_incompatible_type():
     p1 = Point(1, 2)
     with pytest.raises(TypeError):
         _ = p1 > 10
+
+
+def test_is_between_horizontal():
+    from tray.geometry.basic.line import Line
+    p1 = Point(0, 0)
+    p2 = Point(10, 0)
+    line = Line(p1, p2)
+    
+    assert Point(5, 0).is_between(line) is True
+    assert Point(0, 0).is_between(line) is False
+    assert Point(10, 0).is_between(line) is False
+    assert Point(11, 0).is_between(line) is False
+
+
+def test_is_between_vertical():
+    from tray.geometry.basic.line import Line
+    p1 = Point(0, 0)
+    p2 = Point(0, 10)
+    line = Line(p1, p2)
+    
+    assert Point(0, 5).is_between(line) is True
+    assert Point(0, 0).is_between(line) is False
+    assert Point(0, 10).is_between(line) is False
+    assert Point(0, 11).is_between(line) is False

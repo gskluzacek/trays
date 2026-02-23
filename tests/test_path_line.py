@@ -33,10 +33,10 @@ def test_path_line_add_break():
     p1 = Point(0, 0)
     p2 = Point(10, 0)
     pl = PathLine(p1, p2)
-    pl.add_break(5)
-    assert pl.line_breaks == [5]
-    pl.add_break(7.5)
-    assert pl.line_breaks == [5, 7.5]
+    pl.add_break(Point(5, 0))
+    assert pl.line_breaks == [Point(5, 0)]
+    pl.add_break(Point(7, 0))
+    assert pl.line_breaks == [Point(5, 0), Point(7, 0)]
 
 
 def test_path_line_inheritance():

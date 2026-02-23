@@ -1,7 +1,7 @@
 import pytest
 from tray.tray import Tray
 from tray.geometry.basic.point import Point
-from tray.geometry.basic.path import PathOrientation
+from tray.geometry.types.geometric import PathOrientation
 from tray.geometry.wall_line import WallLine
 from tray.geometry.types.tray import WallType
 
@@ -73,7 +73,7 @@ def test_base_management():
     # End base
     tray.end_base()
     assert tray.index_paths[0].orientation == PathOrientation.CW
-    assert len(tray.index_paths[0].path_lines) == 4
+    assert len(tray.index_paths[0].lines) == 4
 
 
 def test_calc_center_to_center_paths():
@@ -93,7 +93,8 @@ def test_calc_center_to_center_paths():
 
     assert len(tray.center_to_center_paths) == 1
     c2c_path = tray.center_to_center_paths[0]
-    assert c2c_path.orientation == tray.index_paths[0].orientation
+    # Path does not have orientation anymore, orientation is in BasePath
+    assert tray.index_paths[0].orientation == PathOrientation.CW
     assert [p.coords for p in c2c_path.points] == [(1.0, 1.0), (13.0, 1.0), (13.0, 13.0), (1.0, 13.0)]
 
 
@@ -494,3 +495,108 @@ def test_tray_classify_index_walls():
 
     # No exception means it passed internal logic.
     tray2.classify_index_walls()
+
+
+def test_tray_generate_walls_segments():
+    material_thickness = 5.0
+    inside_dim_cols = [100.0, 100.0, 100.0]
+    inside_dim_rows = [100.0, 100.0, 100.0]
+    tray = Tray(material_thickness, inside_dim_cols, inside_dim_rows)
+
+    # Boundary path: (0,0)-(3,0)-(3,3)-(0,3)-(0,0)
+    tray.start_base(0, 0)
+    tray.extend_base(3, 0)
+    tray.extend_base(3, 3)
+    tray.extend_base(0, 3)
+    tray.end_base()
+
+    # Wall (0,0)-(4,0) - contains path line (0,0)-(3,0)
+    # Wait, (4,0) is out of bounds. cols = [100, 100, 100] -> max index is 3.
+    # So (0,0)-(3,0) is EXTERIOR.
+    # To get COMBO, wall must extend beyond path.
+    # Path: (1,0)-(2,0)-(2,3)-(1,3)-(1,0)
+    # But path must be on boundaries.
+
+    # Okay, let's use a smaller tray for the test to make it easier to go "out of path" while staying "in bounds"
+    tray = Tray(material_thickness, [100.0], [100.0])  # 1x1 tray. max index 1.
+    # Path: (0,0)-(1,0)-(1,1)-(0,1)-(0,0)
+    tray.start_base(0, 0)
+    tray.extend_base(1, 0)
+    tray.extend_base(1, 1)
+    tray.extend_base(0, 1)
+    tray.end_base()
+
+    # Wall (0,0)-(1,0) is EXTERIOR.
+    # How to get COMBO?
+    # "Wall contains path" is COMBO.
+    # If path has (0,0)-(0.5, 0) and (0.5, 0)-(1,0)? No, indices are ints.
+    # If path has (0,0)-(1,0). Wall (0,0)-(2,0). 2 is out of bounds for 1x1 tray.
+
+    # Wait! Tray.inside_dim_cols length is the max index.
+    # tray = Tray(5.0, [100, 100], [100, 100]) -> max index 2.
+    # Path: (0,0)-(1,0)-(1,1)-(2,1)-(2,2)-(0,2)-(0,0)
+    tray = Tray(5.0, [100.0, 100.0], [100.0, 100.0])
+    tray.start_base(0, 0)
+    tray.extend_base(1, 0)
+    tray.extend_base(1, 1)
+    tray.extend_base(2, 1)
+    tray.extend_base(2, 2)
+    tray.extend_base(0, 2)
+    tray.end_base()
+
+    # Wall (0,0)-(2,0)
+    # Path line 1: (0,0)-(1,0). Wall contains it. -> COMBO.
+    tray.add_wall((0, 0), (2, 0))
+
+    # Vertical COMBO:
+    # Path line 2: (1,0)-(1,1).
+    # Wall (1,0)-(1,2). Wall contains (1,0)-(1,1). -> COMBO.
+    tray.add_wall((1, 0), (1, 2))
+
+    tray.classify_index_walls()
+    # Check if they are COMBO
+    assert tray.index_walls[0].wall_type == WallType.COMBO
+    assert tray.index_walls[1].wall_type == WallType.COMBO
+
+    # split_path_lines
+    tray.split_path_lines()
+    assert len(tray.final_index_paths) == 1
+
+    # generate_walls_segments
+    tray.generate_walls_segments()
+
+    # Verify segments were generated
+    wall1 = tray.index_walls[0]
+    assert len(wall1.segment_path.lines) > 0
+    # wall1 (0,0)-(2,0) overlaps (0,0)-(3,0).
+    # Path line points are (0,0), (3,0).
+    # Only (0,0) is NOT between (0,0) and (2,0).
+    # (3,0) is NOT between (0,0) and (2,0).
+    # Wait, is_between is STRICT?
+    # tray/geometry/basic/point.py:92: return line_pt_1.x < self.x < line_pt_2.x
+    # Yes, it is strict.
+    # points_from_line returns SegmentPoints for the endpoints of the path line.
+    # If path line is (0,0)-(3,0), it returns SegmentPoint(0,0) and SegmentPoint(3,0).
+    # Neither are strictly between (0,0) and (2,0).
+
+    # Let's add a break to the path line to have a point in between.
+    tray.index_paths[0].lines[0].add_break(Point(1, 0))
+    # Re-run split and generate
+    tray.final_index_paths = []
+    tray.split_path_lines()
+    tray.generate_walls_segments()
+
+    # Now wall1 (0,0)-(2,0) overlaps (0,0)-(1,0) and (1,0)-(3,0)
+    # Actually split_path_lines uses line_breaks.
+    # Path line (0,0)-(3,0) with break (1,0) becomes two lines: (0,0)-(1,0) and (1,0)-(3,0) in FinalBasePath.
+    # Wall (0,0)-(2,0) overlaps both.
+    # Path line (0,0)-(1,0) points: (0,0), (1,0). (1,0) is between (0,0) and (2,0).
+    # Path line (1,0)-(3,0) points: (1,0), (3,0). (1,0) is between (0,0) and (2,0).
+    # So segment_points should contain (1,0) twice? No, they are sorted and used.
+
+    wall1 = tray.index_walls[0]
+    assert len(wall1.segment_path.lines) > 0
+
+    # Test _does_wall_line_start_first branch for vertical
+    wall2 = tray.index_walls[1]  # (3,0)-(3,2) vertical
+    assert len(wall2.segment_path.lines) > 0
