@@ -1,8 +1,17 @@
 from tray.tray import Tray
 
 
-def test_main_0():
-    # initial testing of base code
+def test_center_to_center_logic():
+    #
+    # note double line indicates a smooth joint and single line indicates a finger-space (exterior
+    #   walls) or tab-slot joint (interior walls) or a combination of both (combo walls)
+    #
+    #    ┌─────┬───────────┐
+    #    │     │           │
+    #    ├─────┼─────┬─────┤
+    #    │     │     │     │
+    #    └─────┴─────┴─────┘
+
     auto_generate_exterior_base_walls = True
     material_thickness: float = 5
     inside_dim_cols: list[float] = [42.5, 70, 67.5]
@@ -31,6 +40,15 @@ def test_main_0():
     tray.add_wall((0, 1), (3, 1))
     tray.add_wall((2, 1), (2, 2))
 
+    tray.finalize_walls()
+    tray.classify_index_walls()
+    tray.split_path_lines()
+    tray.generate_walls_segments()
+
+    # here we call the functions that were written before the tray methods above for finalize_walls,
+    # classify_index_walls, split_path_lines, and generate_walls_segments. not sure if we will move
+    # forward with this approach. or if we will scap these methods and do something else. But might
+    # as well keep them in one test at least.
     tray.calc_center_to_center_dims()
     tray.calc_center_to_center_points()
     tray.calc_center_to_center_paths()

@@ -2,7 +2,20 @@ from tray.tray import Tray
 
 
 def test_main_1():
-    # advanced testing for base path to external walls analysis
+    #
+    # note double line indicates a smooth joint and single line indicates a finger-space (exterior
+    #   walls) or tab-slot joint (interior walls) or a combination of both (combo walls)
+    #
+    #    ┌─────┬─────┐           ┌─────┬─────┐
+    #    │     │     │           │     │     │
+    #    ├─────┼─────┤           ├─────┼─────┤
+    #    │     │     │           │     │     │
+    #    │     │     ╞═══════════╡     │     │
+    #    │     │     │           │     │     │
+    #    ├─────┴─────┼─────┬─────┼─────┴─────┤
+    #    │           │     │     │           │
+    #    ╘═══════════┴─────┴─────┴═══════════╛
+
     auto_generate_exterior_base_walls = False
     material_thickness: float = 5
     inside_dim_cols: list[float] = [100, 150, 100, 200, 150, 100]
@@ -25,10 +38,10 @@ def test_main_1():
     if auto_generate_exterior_base_walls:
         tray.auto_generate_exterior_base_walls()
     else:
-        tray.add_wall((0, 0), (2, 0))
         # tray.add_wall((2, 0), (2, 2))
-        tray.add_wall((2, 0), (2, 4))
         # tray.add_wall((4, 2), (4, 0))
+        tray.add_wall((0, 0), (2, 0))
+        tray.add_wall((2, 0), (2, 4))
         tray.add_wall((4, 4), (4, 0))
         tray.add_wall((4, 0), (6, 0))
         tray.add_wall((6, 0), (6, 4))
@@ -44,7 +57,10 @@ def test_main_1():
     tray.add_wall((5, 0), (5, 3))
     tray.finalize_walls()
 
+    tray.finalize_walls()
     tray.classify_index_walls()
+    tray.split_path_lines()
+    tray.generate_walls_segments()
 
     print("-" * 100)
     print("path lines")

@@ -221,3 +221,47 @@ def test_line_wall_inside_path_not_collinear_raises():
         ValueError, match="cannot determine endpoints of wall line that are inside path line if lines are not collinear"
     ):
         l1.wall_inside_path(l2)
+
+
+def test_line_equality():
+    p1 = Point(0, 0)
+    p2 = Point(10, 0)
+    l1 = Line(p1, p2)
+    l2 = Line(p1, p2)
+    l3 = Line(p2, p1)  # Same segment, different order
+    l4 = Line(Point(0, 1), Point(10, 1))
+
+    assert l1 == l2
+    assert l1 == l3
+    assert l1 != l4
+    assert l1 == ((0, 0), (10, 0))
+    assert l1 == [Point(0, 0), Point(10, 0)]
+    assert l1 != "not a line"
+
+
+def test_line_comparison():
+    l1 = Line(Point(0, 0), Point(10, 0))
+    l2 = Line(Point(0, 1), Point(10, 1))
+    l3 = Line(Point(1, 0), Point(11, 0))
+
+    # Based on normalized points: ((0, 0), (10, 0)) < ((0, 1), (10, 1))
+    assert l1 < l2
+    assert l1 <= l2
+    assert l2 > l1
+    assert l2 >= l1
+
+    # Based on normalized points: ((0, 0), (10, 0)) < ((1, 0), (11, 0))
+    assert l1 < l3
+    assert l1 <= l3
+    assert l3 > l1
+    assert l3 >= l1
+
+    # Comparison with coerced types
+    assert l1 < ((0, 1), (10, 1))
+    assert l1 <= ((0, 0), (10, 0))
+
+
+def test_line_comparison_unsupported_type():
+    l1 = Line(Point(0, 0), Point(10, 0))
+    with pytest.raises(TypeError):
+        _ = l1 < 5

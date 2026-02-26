@@ -2,6 +2,22 @@ from tray.tray import Tray
 
 
 def test_main_3():
+    #
+    # note double line indicates a smooth joint and single line indicates a finger-space (exterior
+    #   walls) or tab-slot joint (interior walls) or a combination of both (combo walls)
+    #
+    #    ╔═══════════╗
+    #    ║           ║
+    #    ║     ╒═════╝
+    #    ║     │
+    #    ║     ╞═════╗
+    #    ║     │     ║
+    #    ║     ╞═════╝
+    #    ║     │
+    #    ║     ╘═════╗
+    #    ║           ║
+    #    ╚═══════════╝
+
     auto_generate_exterior_base_walls = False
     material_thickness: float = 5
     inside_dim_cols: list[float] = [50, 100]
@@ -22,7 +38,6 @@ def test_main_3():
     tray.extend_base(2, 4)
     tray.extend_base(2, 5)
     tray.extend_base(0, 5)
-
     tray.end_base()
 
     # add lines to represent the walls of the tray (these are the exterior or combo walls)

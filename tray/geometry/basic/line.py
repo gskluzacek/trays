@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import functools
 from collections.abc import Iterator, Sequence
-from typing import Generic, SupportsFloat, TypeVar
+from types import NotImplementedType
+from typing import Any, Generic, SupportsFloat, TypeVar
 from tray.geometry.basic.point import Point
 from tray.geometry.types.geometric import LineOrientation
 
@@ -28,6 +29,54 @@ class Line(Generic[T]):
             self.orientation = LineOrientation.HORZ
         else:
             raise ValueError("cannot set line orientation for points that are not collinear")
+
+    @staticmethod
+    def _coerce(other: Any) -> Line[T] | None:
+        if isinstance(other, Line):
+            return other
+
+        if isinstance(other, (tuple, list)) and len(other) == 2:
+            p1 = Point._coerce(other[0])
+            p2 = Point._coerce(other[1])
+            if p1 and p2:
+                try:
+                    return Line(p1, p2)
+                except ValueError:
+                    return None
+        return None
+
+    def _cmp_key(self) -> tuple[Point[T], Point[T]]:
+        return self.normalize
+
+    def __eq__(self, other: object) -> bool | NotImplementedType:
+        coerced = self._coerce(other)
+        if coerced is None:
+            return NotImplemented
+        return self._cmp_key() == coerced._cmp_key()
+
+    def __lt__(self, other: object) -> bool | NotImplementedType:
+        coerced = self._coerce(other)
+        if coerced is None:
+            return NotImplemented
+        return self._cmp_key() < coerced._cmp_key()
+
+    def __le__(self, other: object) -> bool | NotImplementedType:
+        coerced = self._coerce(other)
+        if coerced is None:
+            return NotImplemented
+        return self._cmp_key() <= coerced._cmp_key()
+
+    def __gt__(self, other: object) -> bool | NotImplementedType:
+        coerced = self._coerce(other)
+        if coerced is None:
+            return NotImplemented
+        return self._cmp_key() > coerced._cmp_key()
+
+    def __ge__(self, other: object) -> bool | NotImplementedType:
+        coerced = self._coerce(other)
+        if coerced is None:
+            return NotImplemented
+        return self._cmp_key() >= coerced._cmp_key()
 
     @property
     def is_vertical(self) -> bool:
