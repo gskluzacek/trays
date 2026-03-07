@@ -12,7 +12,7 @@ class FinalPathLine(Line[int]):
         self.joint_type = JointType.NONE
 
     def __repr__(self) -> str:
-        return f"PathLine(p1={self.p1!r}, p2={self.p2!r}, type={self.orientation!r}, joint={self.joint_type!r})"
+        return f"FinalPathLine(p1={self.p1!r}, p2={self.p2!r}, orientation={self.orientation!r}, joint={self.joint_type!r})"
 
     def __str__(self) -> str:
         return f"{self.p1}, {self.p2}, {self.orientation}, {self.joint_type}"

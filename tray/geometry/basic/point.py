@@ -24,7 +24,7 @@ class Point(Generic[T]):
             raise ValueError(f"x and y must be non-negative (got x={self.x}, y={self.y})")
 
     def __str__(self) -> str:
-        return f"[{self.x}, {self.y}]"
+        return f"({self.x}, {self.y})"
 
     @staticmethod
     def _coerce(other: Any) -> Point[SupportsFloat] | None:

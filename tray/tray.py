@@ -82,6 +82,8 @@ class Tray:
             wall.wall_type = wall_type
 
     def classify_index_walls(self):
+        # assigns wall_type to each wall: EXTERIOR, INTERIOR, or COMBO
+        # additionally, it determines the breaks in path lines (and adds them to the path line) when wall_type is COMBO or EXTERIOR
         self._classify_index_walls(LineOrientation.HORZ)
         self._classify_index_walls(LineOrientation.VERT)
 
@@ -201,6 +203,7 @@ class Tray:
         self.index_walls.append(index_wall)
 
     def finalize_walls(self):
+        # make sure that the walls specified do not overlap with one another
         self._validate_for_overlapping_lines(self.index_walls)
 
     def auto_generate_exterior_base_walls(self):
@@ -209,6 +212,7 @@ class Tray:
                 self.add_wall(p1.coords, p2.coords)
 
     def split_path_lines(self):
+        # using the line_breaks, as determined by _classify_index_wall(), generate the final path points/lines
         for index_path in self.index_paths:
             new_path = FinalBasePath()
             for line in index_path.lines:
@@ -256,19 +260,22 @@ class Tray:
         points = [wall.p1] + [pt.to_point for pt in segment_points] + [wall.p2]
         wall.segment_path.points = points
 
-        path_line_1 = segment_points[0].line
-        first_joint_type = 0 if self._does_wall_line_start_first(wall, path_line_1) else 1
+        first_joint_type = 1
+        if segment_points:
+            path_line_1 = segment_points[0].line
+            first_joint_type = 0 if self._does_wall_line_start_first(wall, path_line_1) else 1
 
         joints = [JointType.TS, JointType.FS]
-        for i, (p1, p2) in enumerate(fwd_pair(points)):
-            joint_type = joints[(i + first_joint_type) % 2]
+        for i, (p1, p2) in enumerate(fwd_pair(points), first_joint_type):
+            joint_type = joints[i % 2]
             wall.segment_path.add_segment(p1, p2, joint_type)
 
     def _generate_walls_segments(self, orientation: LineOrientation):
         for wall in Line.of_orientation(self.index_walls, orientation):
             # TODO: I'm thinking to keep Walls of all types implemented in consistently to run the _generate_wall_segments for all types
-            if wall.wall_type == WallType.COMBO:
-                self._generate_wall_segments(wall)
+            # TODO: trying out running for ally wall_type's by commenting out the if statement below
+            # if wall.wall_type == WallType.COMBO:
+            self._generate_wall_segments(wall)
 
     def generate_walls_segments(self):
         self._generate_walls_segments(LineOrientation.HORZ)
