@@ -1,4 +1,4 @@
-from tray.tray import Tray
+from tests.integration.test_utils import create_tray
 
 
 def test_main_1():
@@ -16,51 +16,27 @@ def test_main_1():
     #    │           │     │     │           │
     #    ╘═══════════┴─────┴─────┴═══════════╛
 
-    auto_generate_exterior_base_walls = False
     material_thickness: float = 5
     inside_dim_cols: list[float] = [100, 150, 100, 200, 150, 100]
     inside_dim_rows: list[float] = [100, 50, 100, 150]
+    base_points = [(0, 0), (2, 0), (2, 2), (4, 2), (4, 0), (6, 0), (6, 4), (0, 4)]
+    walls = [
+        ((0, 0), (2, 0)),
+        ((2, 0), (2, 4)),
+        ((4, 4), (4, 0)),
+        ((4, 0), (6, 0)),
+        ((6, 0), (6, 4)),
+        ((4, 4), (2, 4)),
+        ((0, 4), (0, 0)),
+        ((0, 1), (2, 1)),
+        ((4, 1), (6, 1)),
+        ((0, 3), (6, 3)),
+        ((1, 0), (1, 3)),
+        ((3, 3), (3, 4)),
+        ((5, 0), (5, 3)),
+    ]
 
-    tray = Tray(material_thickness, inside_dim_cols, inside_dim_rows)
-
-    # define the polygon for the tray's base
-    tray.start_base(0, 0)
-    tray.extend_base(2, 0)
-    tray.extend_base(2, 2)
-    tray.extend_base(4, 2)
-    tray.extend_base(4, 0)
-    tray.extend_base(6, 0)
-    tray.extend_base(6, 4)
-    tray.extend_base(0, 4)
-    tray.end_base()
-
-    # add lines to represent the walls of the tray (these are the exterior walls)
-    if auto_generate_exterior_base_walls:
-        tray.auto_generate_exterior_base_walls()
-    else:
-        # tray.add_wall((2, 0), (2, 2))
-        # tray.add_wall((4, 2), (4, 0))
-        tray.add_wall((0, 0), (2, 0))
-        tray.add_wall((2, 0), (2, 4))
-        tray.add_wall((4, 4), (4, 0))
-        tray.add_wall((4, 0), (6, 0))
-        tray.add_wall((6, 0), (6, 4))
-        tray.add_wall((4, 4), (2, 4))
-        tray.add_wall((0, 4), (0, 0))
-
-    # add lines to represent the walls of the tray (these are the interior walls)
-    tray.add_wall((0, 1), (2, 1))
-    tray.add_wall((4, 1), (6, 1))
-    tray.add_wall((0, 3), (6, 3))
-    tray.add_wall((1, 0), (1, 3))
-    tray.add_wall((3, 3), (3, 4))
-    tray.add_wall((5, 0), (5, 3))
-    tray.finalize_walls()
-
-    tray.finalize_walls()
-    tray.classify_index_walls()
-    tray.split_path_lines()
-    tray.generate_walls_segments()
+    tray = create_tray(material_thickness, inside_dim_cols, inside_dim_rows, base_points, walls=walls, auto_exterior=False)
 
     print("-" * 100)
     print("path lines")
