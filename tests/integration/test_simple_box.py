@@ -11,6 +11,9 @@ from tests.integration.test_utils import (
 
 def test_simple_box():
     #
+    # note double line indicates a smooth joint and single line indicates a finger-space (exterior
+    #   walls) or tab-slot joint (interior walls) or a combination of both (combo walls)
+    #
     #    ┌─────┐
     #    │     │
     #    └─────┘
@@ -18,56 +21,106 @@ def test_simple_box():
     material_thickness: float = 5
     inside_dim_cols: list[float] = [100]
     inside_dim_rows: list[float] = [100]
-    base_points = [(0, 0), (1, 0), (1, 1), (0, 1)]
+    base_points = [
+        (0, 0),
+        (1, 0),
+        (1, 1),
+        (0, 1),
+    ]
 
-    tray = create_tray(material_thickness, inside_dim_cols, inside_dim_rows, base_points)
+    # auto generate base walls, no additional interior walls
+    tray = create_tray(
+        material_thickness=material_thickness,
+        inside_dim_cols=inside_dim_cols,
+        inside_dim_rows=inside_dim_rows,
+        base_points=base_points,
+        auto_exterior=True,
+    )
 
     # ################################################################################
     # validate index_paths
     # ################################################################################
 
-    assert len(tray.index_paths) == 1
-    assert_base_path(
-        tray.index_paths[0],
-        expected_orientation=PathOrientation.CW,
-        expected_points=[(0, 0), (1, 0), (1, 1), (0, 1)],
-        expected_line_coords=[
+    # one per path
+    expected_orientation_list = [
+        PathOrientation.CW,
+    ]
+    # one list of x,y tuples per path
+    expected_points_list = [
+        [(0, 0), (1, 0), (1, 1), (0, 1)],
+    ]
+    # one list of p1,p2 tuples per path
+    expected_line_coords_list = [
+        [
             ((0, 0), (1, 0)),
             ((1, 0), (1, 1)),
             ((1, 1), (0, 1)),
             ((0, 1), (0, 0)),
         ],
-        expected_line_orientations=[
+    ]
+    # one list of LineOrientation per path
+    expected_line_orientations_list = [
+        [
             LineOrientation.HORZ,
             LineOrientation.VERT,
             LineOrientation.HORZ,
             LineOrientation.VERT,
-        ],
-        expected_line_breaks=[[], [], [], []],
-    )
+        ]
+    ]
+    # one list of lists per path, each list is a list of LineBreaks
+    expected_line_breaks_list = [[[], [], [], []]]
+
+    assert len(tray.index_paths) == 1
+    for i, index_path in enumerate(tray.index_paths):
+        assert_base_path(
+            tray.index_paths[i],
+            expected_orientation=expected_orientation_list[i],
+            expected_points=expected_points_list[i],
+            expected_line_coords=expected_line_coords_list[i],
+            expected_line_orientations=expected_line_orientations_list[i],
+            expected_line_breaks=expected_line_breaks_list[i],
+        )
 
     # ################################################################################
     # validate final_index_paths
     # ################################################################################
 
-    assert len(tray.final_index_paths) == 1
-    assert_final_base_path(
-        tray.final_index_paths[0],
-        expected_orientation=PathOrientation.CW,
-        expected_points=[(0, 0), (1, 0), (1, 1), (0, 1)],
-        expected_line_coords=[
+    # one per path
+    expected_orientation_list = [
+        PathOrientation.CW,
+    ]
+    # one list of x,y tuples per path
+    expected_points_list = [
+        [(0, 0), (1, 0), (1, 1), (0, 1)],
+    ]
+    # one list of p1,p2 tuples per path
+    expected_line_coords_list = [
+        [
             ((0, 0), (1, 0)),
             ((1, 0), (1, 1)),
             ((1, 1), (0, 1)),
             ((0, 1), (0, 0)),
         ],
-        expected_line_orientations=[
+    ]
+    # one list of LineOrientation per path
+    expected_line_orientations_list = [
+        [
             LineOrientation.HORZ,
             LineOrientation.VERT,
             LineOrientation.HORZ,
             LineOrientation.VERT,
-        ],
-    )
+        ]
+    ]
+
+    assert len(tray.final_index_paths) == 1
+    for i, index_path in enumerate(tray.index_paths):
+        assert_final_base_path(
+            tray.final_index_paths[i],
+            expected_orientation=expected_orientation_list[i],
+            expected_points=expected_points_list[i],
+            expected_line_coords=expected_line_coords_list[i],
+            expected_line_orientations=expected_line_orientations_list[i],
+        )
 
     # ################################################################################
     # validate index_walls

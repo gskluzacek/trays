@@ -257,15 +257,25 @@ class Tray:
                     segment_points.extend([pt for pt in path_line.points_from_line if pt.is_between(wall)])
 
         segment_points.sort()
+        # TODO: if there are multple segment points how do we ensure that when they are added to the
+        #  wall.p & wall.p2, that they are in the correct order?
         points = [wall.p1] + [pt.to_point for pt in segment_points] + [wall.p2]
         wall.segment_path.points = points
 
-        first_joint_type = 1
+        if wall.wall_type == WallType.INTERIOR:
+            first_joint_type = 0
+        else:
+            # TODO: are there any other conditions that we need to check to determine if an empty
+            #  segment_points list with a COMBO/EXTERIOR wall-line should have a 1st joint type of 1 or 0?
+            first_joint_type = 1
         if segment_points:
             path_line_1 = segment_points[0].line
+            # TODO: does the line direction have an effect on the first_joint_type?
             first_joint_type = 0 if self._does_wall_line_start_first(wall, path_line_1) else 1
 
         joints = [JointType.TS, JointType.FS]
+        # TODO: the code below assumes that the wall starts at the top/left and goes to the bottom/right.
+        #  we need to make the code to take the direction into account (i.e., bottom/right to top/left).
         for i, (p1, p2) in enumerate(fwd_pair(points), first_joint_type):
             joint_type = joints[i % 2]
             wall.segment_path.add_segment(p1, p2, joint_type)
