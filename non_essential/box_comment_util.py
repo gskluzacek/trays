@@ -268,6 +268,36 @@ def render_comment(
     return "\n".join(prefix + line for line in lines)
 
 
+def test_main_4():
+    base_points = [
+        (0, 0),
+        (2, 0),
+        (2, 2),
+        (4, 2),
+        (4, 0),
+        (6, 0),
+        (6, 3),
+        (4, 3),
+        (4, 4),
+        (6, 4),
+        (6, 7),
+        (4, 7),
+        (4, 5),
+        (2, 5),
+        (2, 7),
+        (0, 7),
+        (0, 4),
+        (2, 4),
+        (2, 3),
+        (0, 3),
+    ]
+    interior_walls = [
+        ((2, 1), (2, 6)),
+        ((4, 6), (4, 1)),
+    ]
+    return base_points, interior_walls
+
+
 def main_3a():
     base = [
         (0, 0),
@@ -391,7 +421,7 @@ def simple_tray():
 
 
 def main():
-    base, walls = main_3a()
+    base, walls = test_main_4()
     print(
         render_comment(
             base_points=base,

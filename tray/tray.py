@@ -242,8 +242,8 @@ class Tray:
         line1_p1, line1_p2 = line1.normalize
         line2_p1, line2_p2 = line2.normalize
         if line1.is_horizontal:
-            return line1_p1.x < line2_p1.x
-        return line1_p1.y < line2_p1.y
+            return (line1_p1.x < line2_p1.x) if line1.p1 < line1.p2 else (line1_p2.x > line2_p2.x)
+        return (line1_p1.y < line2_p1.y) if line1.p1 < line1.p2 else (line1_p2.y > line2_p2.y)
 
     def _generate_wall_segments(self, wall: WallLine):
         segment_points: list[SegmentPoint] = []
@@ -254,11 +254,11 @@ class Tray:
                 # note is_overlapping already checks if the lines are collinear, so no need to check here
                 if path_line.is_overlapping(wall):
                     # we check both P1 and P2 of path_line to see if they are between wall's points
+                    # points_from_line - calls normalize on the points (probably not necessary as we sort the segment points)
                     segment_points.extend([pt for pt in path_line.points_from_line if pt.is_between(wall)])
 
-        segment_points.sort()
-        # TODO: if there are multple segment points how do we ensure that when they are added to the
-        #  wall.p & wall.p2, that they are in the correct order?
+        # we reverse the order of the sort if the wall line is bottom/right to top/left versus top/left to bottom/right
+        segment_points.sort(reverse=False if wall.p1 < wall.p2 else True)
         points = [wall.p1] + [pt.to_point for pt in segment_points] + [wall.p2]
         wall.segment_path.points = points
 
@@ -270,21 +270,15 @@ class Tray:
             first_joint_type = 1
         if segment_points:
             path_line_1 = segment_points[0].line
-            # TODO: does the line direction have an effect on the first_joint_type?
             first_joint_type = 0 if self._does_wall_line_start_first(wall, path_line_1) else 1
 
         joints = [JointType.TS, JointType.FS]
-        # TODO: the code below assumes that the wall starts at the top/left and goes to the bottom/right.
-        #  we need to make the code to take the direction into account (i.e., bottom/right to top/left).
         for i, (p1, p2) in enumerate(fwd_pair(points), first_joint_type):
             joint_type = joints[i % 2]
             wall.segment_path.add_segment(p1, p2, joint_type)
 
     def _generate_walls_segments(self, orientation: LineOrientation):
         for wall in Line.of_orientation(self.index_walls, orientation):
-            # TODO: I'm thinking to keep Walls of all types implemented in consistently to run the _generate_wall_segments for all types
-            # TODO: trying out running for ally wall_type's by commenting out the if statement below
-            # if wall.wall_type == WallType.COMBO:
             self._generate_wall_segments(wall)
 
     def generate_walls_segments(self):

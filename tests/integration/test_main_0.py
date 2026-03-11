@@ -226,8 +226,8 @@ def test_center_to_center_logic():
             [JointType.FS],
             [JointType.FS],
             [JointType.FS],
-            [JointType.FS],
-            [JointType.FS],
-            [JointType.FS],
+            [JointType.TS],
+            [JointType.TS],
+            [JointType.TS],
         ],
     )

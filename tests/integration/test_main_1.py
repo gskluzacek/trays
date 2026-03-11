@@ -282,14 +282,11 @@ def test_main_1():
         expected_joint_types=[
             [JointType.FS],
             [JointType.FS, JointType.TS],
-            [JointType.FS, JointType.TS],
+            [JointType.TS, JointType.FS],
             [JointType.FS],
             [JointType.FS],
             [JointType.FS],
             [JointType.FS],
-            # TODO:
-            # TODO: actual joint types are coming back FS and they should be TS ???
-            # TODO:
             [JointType.TS],
             [JointType.TS],
             [JointType.TS],
