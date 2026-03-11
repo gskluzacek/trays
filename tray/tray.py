@@ -226,8 +226,12 @@ class Tray:
     @staticmethod
     def _does_wall_line_start_first(line1: WallLine, line2: FinalPathLine) -> bool:
         """
-        Determines if the wall line starts before the final path line based on their
+        Determines if the wall line starts/ends before/after the final path line based on their
         normalized positions and alignment.
+
+        NOTE: if the wall's direction is bottom/right to top/left then what we normally think of as the start
+        of the wall-line & path-line is P2 after normalization. Additionally, `before` also becomes `after` in
+        this case, essentially flipping the logic. but we are still checking if the wall-line starts first.
 
         IMPORTANT: The Wall Line and Path Line need to be collinear and (partially) overlapping to
         have a chance of returning True.
@@ -236,7 +240,9 @@ class Tray:
         :type line1: WallLine
         :param line2: The final path line to compare.
         :type line2: FinalPathLine
-        :return: True if the wall line starts before the final path line, otherwise False.
+        :return: 1) True if the wall's direction is top/left to bottom/right and the wall line starts before
+            the final path line or 2) True if the wall's direction is bottom/right to top/left and the wall line
+            ends after the final path line.
         :rtype: bool
         """
         line1_p1, line1_p2 = line1.normalize
