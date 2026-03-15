@@ -202,7 +202,10 @@ def test_main_3a():
             expected_line_orientations=expected_final_line_orientations_list[i],
         )
 
+    # ################################################################################
     # validate index_walls
+    # ################################################################################
+
     assert_wall_lines(
         tray.index_walls,
         expected_coords=[((1, 3), (1, 7))],
@@ -210,7 +213,9 @@ def test_main_3a():
         expected_wall_types=[WallType.COMBO],
     )
 
-    # validate segment_paths
+    # ################################################################################
+    # validate the SegmentPath for each WallLine object
+    # ################################################################################
     assert_segment_paths(
         tray.index_walls,
         expected_points=[[(1, 3), (1, 4), (1, 6), (1, 7)]],

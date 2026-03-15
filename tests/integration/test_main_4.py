@@ -153,7 +153,7 @@ def test_main_4():
             LineOrientation.VERT,
         ]
     ]
-
+    # one list of lists per path, each list is a list of LineBreaks
     expected_line_breaks_list = [
         [
             [],
@@ -296,7 +296,10 @@ def test_main_4():
             expected_line_orientations=expected_final_line_orientations_list[i],
         )
 
+    # ################################################################################
     # validate index_walls
+    # ################################################################################
+
     assert_wall_lines(
         tray.index_walls,
         expected_coords=[
@@ -313,6 +316,9 @@ def test_main_4():
         ],
     )
 
+    # ################################################################################
+    # validate the SegmentPath for each WallLine object
+    # ################################################################################
     assert_segment_paths(
         tray.index_walls,
         expected_points=[
