@@ -141,7 +141,7 @@ def test_center_to_center_logic():
     ]
 
     assert len(tray.final_index_paths) == 1
-    for i, index_path in enumerate(tray.index_paths):
+    for i, final_index_path in enumerate(tray.final_index_paths):
         assert_final_base_path(
             tray.final_index_paths[i],
             expected_orientation=expected_orientation_list[i],

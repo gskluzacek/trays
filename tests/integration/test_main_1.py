@@ -56,10 +56,10 @@ def test_main_1():
     ]
 
     tray = create_tray(
-        material_thickness,
-        inside_dim_cols,
-        inside_dim_rows,
-        base_points,
+        material_thickness=material_thickness,
+        inside_dim_cols=inside_dim_cols,
+        inside_dim_rows=inside_dim_rows,
+        base_points=base_points,
         base_walls=base_walls,
         interior_walls=interior_walls,
         auto_exterior=False,
@@ -163,7 +163,7 @@ def test_main_1():
     ]
 
     assert len(tray.final_index_paths) == 1
-    for i, index_path in enumerate(tray.index_paths):
+    for i, final_index_path in enumerate(tray.final_index_paths):
         assert_final_base_path(
             tray.final_index_paths[i],
             expected_orientation=expected_orientation_list[i],
