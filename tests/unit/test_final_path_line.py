@@ -40,7 +40,7 @@ def test_final_path_line_repr():
     p2 = Point(10, 0)
     fl = FinalPathLine(p1, p2)
     # PathLine(p1=Point(x=0, y=0), p2=Point(x=10, y=0), type=<LineOrientation.HORZ: 'horizontal'>, joint=<JointType.NONE: 'none'>)
-    expected_repr = f"PathLine(p1={p1!r}, p2={p2!r}, type={fl.orientation!r}, joint={fl.joint_type!r})"
+    expected_repr = f"FinalPathLine(p1={p1!r}, p2={p2!r}, orientation={fl.orientation!r}, joint={fl.joint_type!r})"
     assert repr(fl) == expected_repr
 
 
