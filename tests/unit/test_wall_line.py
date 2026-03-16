@@ -47,7 +47,7 @@ def test_wall_line_repr():
     p1 = Point(0, 0)
     p2 = Point(10, 0)
     wall = WallLine(p1, p2, wall_type=WallType.INTERIOR)
-    expected = f"Line(p1={p1!r}, p2={p2!r}, type={wall.orientation!r}, wall_type={WallType.INTERIOR!r})"
+    expected = f"Line(p1={p1!r}, p2={p2!r}, type={wall.orientation!r}, wall_type={WallType.INTERIOR!r}, segment_path=[])"
     assert repr(wall) == expected
 
 

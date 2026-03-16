@@ -13,7 +13,7 @@ class WallLine(Line[int]):
         self.segment_path: SegmentPath = SegmentPath()
 
     def __repr__(self) -> str:
-        return f"Line(p1={self.p1!r}, p2={self.p2!r}, type={self.orientation!r}, wall_type={self.wall_type!r}, segment_path={self.segment_path!r})"
+        return f"Line(p1={self.p1!r}, p2={self.p2!r}, type={self.orientation!r}, wall_type={self.wall_type!r}, segment_path={self.segment_path.points!r})"
 
     def __str__(self) -> str:
         return f"[{self.p1}, {self.p2}, {self.orientation}, {self.wall_type.label}, {self.segment_path}]"

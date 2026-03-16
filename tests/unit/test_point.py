@@ -16,7 +16,7 @@ def test_point_repr():
 
 def test_point_str():
     p = Point(1, 2)
-    assert str(p) == "[1, 2]"
+    assert str(p) == "(1, 2)"
 
 
 def test_point_coords():
@@ -175,10 +175,11 @@ def test_point_gt_incompatible_type():
 
 def test_is_between_horizontal():
     from tray.geometry.basic.line import Line
+
     p1 = Point(0, 0)
     p2 = Point(10, 0)
     line = Line(p1, p2)
-    
+
     assert Point(5, 0).is_between(line) is True
     assert Point(0, 0).is_between(line) is False
     assert Point(10, 0).is_between(line) is False
@@ -187,10 +188,11 @@ def test_is_between_horizontal():
 
 def test_is_between_vertical():
     from tray.geometry.basic.line import Line
+
     p1 = Point(0, 0)
     p2 = Point(0, 10)
     line = Line(p1, p2)
-    
+
     assert Point(0, 5).is_between(line) is True
     assert Point(0, 0).is_between(line) is False
     assert Point(0, 10).is_between(line) is False
