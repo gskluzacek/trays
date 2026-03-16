@@ -259,9 +259,25 @@ def test_line_comparison():
     # Comparison with coerced types
     assert l1 < ((0, 1), (10, 1))
     assert l1 <= ((0, 0), (10, 0))
+    assert l1 <= ((0, 1), (10, 1))
+    assert l2 > ((0, 0), (10, 0))
+    assert l2 >= ((0, 1), (10, 1))
+    assert l2 >= ((0, 0), (10, 0))
 
 
 def test_line_comparison_unsupported_type():
     l1 = Line(Point(0, 0), Point(10, 0))
     with pytest.raises(TypeError):
         _ = l1 < 5
+    with pytest.raises(TypeError):
+        _ = l1 <= 5
+    with pytest.raises(TypeError):
+        _ = l1 > 5
+    with pytest.raises(TypeError):
+        _ = l1 >= 5
+
+
+def test_line_coerce_value_error():
+    # p1 and p2 must be horizontal or vertical
+    # _coerce returns None if Line(p1, p2) raises ValueError
+    assert Line._coerce(((0, 0), (1, 1))) is None
