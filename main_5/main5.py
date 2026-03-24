@@ -1747,10 +1747,12 @@ def main():
     base.create_path_walls()
     base.proc_walls()
 
-    # base.gen_svg_base_path()
-    # base.gen_svg_base_slots()
-    # y_pos = base.gen_svg_inner_walls()
-    # base.gen_svg_outer_walls(y_pos)
+    # note in the code the following lines were commented out
+    # but we are uncommenting them so that their usage shows up in the IDE
+    base.gen_svg_base_path()
+    base.gen_svg_base_slots()
+    y_pos = base.gen_svg_inner_walls()
+    base.gen_svg_outer_walls(y_pos)
 
     base.st_base_path()
 

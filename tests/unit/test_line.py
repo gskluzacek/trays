@@ -1,7 +1,8 @@
 import pytest
 from tray.geometry.basic.point import Point
 from tray.geometry.basic.line import Line
-from tray.geometry.types.geometric import LineOrientation
+from tray.geometry.types.geometric import LineOrientation, PointLine
+from tray.geometry.types.tray import IntrxnType
 
 
 def test_line_init_horizontal():
@@ -281,3 +282,153 @@ def test_line_coerce_value_error():
     # p1 and p2 must be horizontal or vertical
     # _coerce returns None if Line(p1, p2) raises ValueError
     assert Line._coerce(((0, 0), (1, 1))) is None
+
+
+def test_line_check_point_on_line_horizontal():
+    ln = Line(Point(10, 10), Point(20, 10))
+    assert ln.check_point_on_line(Point(9, 10)) == PointLine.OUTSIDE
+    assert ln.check_point_on_line(Point(21, 10)) == PointLine.OUTSIDE
+    assert ln.check_point_on_line(Point(10, 10)) == PointLine.P1
+    assert ln.check_point_on_line(Point(20, 10)) == PointLine.P2
+    assert ln.check_point_on_line(Point(15, 10)) == PointLine.BETWEEN
+
+
+def test_line_check_point_on_line_vertical():
+    ln = Line(Point(10, 10), Point(10, 20))
+    assert ln.check_point_on_line(Point(10, 9)) == PointLine.OUTSIDE
+    assert ln.check_point_on_line(Point(10, 21)) == PointLine.OUTSIDE
+    assert ln.check_point_on_line(Point(10, 10)) == PointLine.P1
+    assert ln.check_point_on_line(Point(10, 20)) == PointLine.P2
+    assert ln.check_point_on_line(Point(10, 15)) == PointLine.BETWEEN
+
+
+def test_line_intersection_point():
+    horz = Line(Point(0, 5), Point(10, 5))
+    vert = Line(Point(5, 0), Point(5, 10))
+    assert horz.intersection_point(vert) == Point(5, 5)
+
+
+def test_line_intersect_none_horz_outside():
+    horz = Line(Point(0, 5), Point(5, 5))
+    vert = Line(Point(6, 0), Point(6, 10))
+    pt, intrxn_type = horz.intersect(vert)
+    assert pt is None
+    assert intrxn_type == IntrxnType.NONE
+
+
+def test_line_intersect_none_vert_outside():
+    horz = Line(Point(0, 5), Point(10, 5))
+    vert = Line(Point(5, 6), Point(5, 10))
+    pt, intrxn_type = horz.intersect(vert)
+    assert pt is None
+    assert intrxn_type == IntrxnType.NONE
+
+
+def test_line_intersect_corner_lt():
+    horz = Line(Point(5, 5), Point(15, 5))
+    vert = Line(Point(5, 5), Point(5, 15))
+    pt, intrxn_type = horz.intersect(vert)
+    assert pt == Point(5, 5)
+    assert intrxn_type == IntrxnType.CORNER_LT
+
+
+def test_line_intersect_corner_lb():
+    horz = Line(Point(5, 5), Point(15, 5))
+    vert = Line(Point(5, 0), Point(5, 5))
+    pt, intrxn_type = horz.intersect(vert)
+    assert pt == Point(5, 5)
+    assert intrxn_type == IntrxnType.CORNER_LB
+
+
+def test_line_intersect_tee_l():
+    horz = Line(Point(5, 5), Point(15, 5))
+    vert = Line(Point(5, 0), Point(5, 10))
+    pt, intrxn_type = horz.intersect(vert)
+    assert pt == Point(5, 5)
+    assert intrxn_type == IntrxnType.TEE_L
+
+
+def test_line_intersect_corner_rt():
+    horz = Line(Point(0, 5), Point(10, 5))
+    vert = Line(Point(10, 5), Point(10, 15))
+    pt, intrxn_type = horz.intersect(vert)
+    assert pt == Point(10, 5)
+    assert intrxn_type == IntrxnType.CORNER_RT
+
+
+def test_line_intersect_corner_rb():
+    horz = Line(Point(0, 5), Point(10, 5))
+    vert = Line(Point(10, 0), Point(10, 5))
+    pt, intrxn_type = horz.intersect(vert)
+    assert pt == Point(10, 5)
+    assert intrxn_type == IntrxnType.CORNER_RB
+
+
+def test_line_intersect_tee_r():
+    horz = Line(Point(0, 5), Point(10, 5))
+    vert = Line(Point(10, 0), Point(10, 10))
+    pt, intrxn_type = horz.intersect(vert)
+    assert pt == Point(10, 5)
+    assert intrxn_type == IntrxnType.TEE_R
+
+
+def test_line_intersect_tee_t():
+    horz = Line(Point(0, 5), Point(10, 5))
+    vert = Line(Point(5, 5), Point(5, 15))
+    pt, intrxn_type = horz.intersect(vert)
+    assert pt == Point(5, 5)
+    assert intrxn_type == IntrxnType.TEE_T
+
+
+def test_line_intersect_tee_b():
+    horz = Line(Point(0, 5), Point(10, 5))
+    vert = Line(Point(5, 0), Point(5, 5))
+    pt, intrxn_type = horz.intersect(vert)
+    assert pt == Point(5, 5)
+    assert intrxn_type == IntrxnType.TEE_B
+
+
+def test_line_intersect_cross():
+    horz = Line(Point(0, 5), Point(10, 5))
+    vert = Line(Point(5, 0), Point(5, 10))
+    pt, intrxn_type = horz.intersect(vert)
+    assert pt == Point(5, 5)
+    assert intrxn_type == IntrxnType.CROSS
+
+
+def test_line_point_from_line_vertical():
+    ln = Line(Point(10, 0), Point(10, 10))
+    assert ln.point_from_line(5) == Point(10, 5)
+
+
+def test_line_wall_inside_path_horizontal():
+    wall = Line(Point(2, 5), Point(8, 5))
+    path = Line(Point(0, 5), Point(10, 5))
+    points = wall.wall_inside_path(path)
+    assert len(points) == 2
+    assert Point(2, 5) in points
+    assert Point(8, 5) in points
+
+
+def test_line_wall_inside_path_vertical():
+    wall = Line(Point(5, 2), Point(5, 8))
+    path = Line(Point(5, 0), Point(5, 10))
+    points = wall.wall_inside_path(path)
+    assert len(points) == 2
+    assert Point(5, 2) in points
+    assert Point(5, 8) in points
+
+
+def test_line_wall_inside_path_one_point_inside():
+    wall = Line(Point(5, 5), Point(15, 5))
+    path = Line(Point(0, 5), Point(10, 5))
+    points = wall.wall_inside_path(path)
+    assert len(points) == 1
+    assert Point(5, 5) in points
+
+
+def test_line_wall_inside_path_no_points_inside():
+    wall = Line(Point(11, 5), Point(15, 5))
+    path = Line(Point(0, 5), Point(10, 5))
+    points = wall.wall_inside_path(path)
+    assert len(points) == 0
