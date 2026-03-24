@@ -14,3 +14,11 @@ class PathOrientation(Enum):
     CCW = "counter_clockwise"
     COL = "collinear"
     NONE = "none"
+
+
+class PointLine(Enum):
+    P1 = "p1"
+    P2 = "p2"
+    BETWEEN = "between"
+    OUTSIDE = "outside"
+    NONE = "none"

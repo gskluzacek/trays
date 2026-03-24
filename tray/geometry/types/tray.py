@@ -6,9 +6,9 @@ from enum import Enum, IntEnum
 class JointType(Enum):
     FS = "finger-space"
     TS = "tab-slot"
-    CR = "cross"
-    SM = "smooth"
-    NONE = "none"
+    CR = "cross"  # AKA dual-slot
+    SM = "smooth"  # AKA no joint - the edge is smooth
+    NONE = "none"  # not defined
 
 
 class WallType(IntEnum):
@@ -26,3 +26,16 @@ class WallType(IntEnum):
     @property
     def label(self) -> str:
         return self._label_
+
+
+class IntrxnType(Enum):
+    NONE = "none"
+    CORNER_LT = "corner-left_top"
+    CORNER_LB = "corner-left_bottom"
+    CORNER_RT = "corner-right_top"
+    CORNER_RB = "corner-right_bottom"
+    TEE_L = "tee-left"
+    TEE_R = "tee-right"
+    TEE_T = "tee-top"
+    TEE_B = "tee-bottom"
+    CROSS = "cross"
