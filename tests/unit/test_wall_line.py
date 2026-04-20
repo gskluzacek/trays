@@ -4,6 +4,9 @@ from tray.geometry.basic.point import Point
 from tray.geometry.base.path_line import PathLine
 from tray.geometry.types.tray import WallType
 from tray.geometry.types.geometric import LineOrientation
+from tray.geometry.types.geometric import PointLine
+from tray.geometry.types.tray import IntrxnType, JointType
+from tray.geometry.intersection import Intersection
 from tray.geometry.wall_line import WallLine
 
 
@@ -15,6 +18,7 @@ def test_wall_line_init():
     assert wall.p2 == p2
     assert wall.orientation == LineOrientation.HORZ
     assert wall.wall_type == WallType.NONE
+    assert wall.intersections == []
 
 
 def test_wall_line_init_with_type():
@@ -141,3 +145,33 @@ def test_classify_wall_unhandled_collinear_configuration():
             mock_normalize.side_effect = [(Point(float("nan"), 0), Point(float("nan"), 0)), (Point(0, 0), Point(1, 0))]
             with pytest.raises(ValueError, match="Unhandled collinear configuration"):
                 wall.classify_wall(path_line)
+
+
+def test_determine_segments_with_intrxn_adds_intersection_for_point_on_segment():
+    wall = WallLine(Point(0, 0), Point(10, 0))
+    wall.segment_path.add_segment(Point(0, 0), Point(5, 0), JointType.NONE)
+    wall.segment_path.add_segment(Point(5, 0), Point(10, 0), JointType.NONE)
+    intrxn = Intersection(Point(5, 0), IntrxnType.CROSS)
+
+    wall.determine_segments_with_intrxn(intrxn)
+
+    first_intersections = wall.segment_path.lines[0].intersections
+    second_intersections = wall.segment_path.lines[1].intersections
+    assert len(first_intersections) == 1
+    assert len(second_intersections) == 1
+    assert first_intersections[0].pt_chk == PointLine.P2
+    assert second_intersections[0].pt_chk == PointLine.P1
+    assert first_intersections[0].intrxn is intrxn
+    assert second_intersections[0].intrxn is intrxn
+
+
+def test_determine_segments_with_intrxn_skips_point_outside_segments():
+    wall = WallLine(Point(0, 0), Point(10, 0))
+    wall.segment_path.add_segment(Point(0, 0), Point(5, 0), JointType.NONE)
+    wall.segment_path.add_segment(Point(5, 0), Point(10, 0), JointType.NONE)
+    intrxn = Intersection(Point(11, 0), IntrxnType.CROSS)
+
+    wall.determine_segments_with_intrxn(intrxn)
+
+    assert wall.segment_path.lines[0].intersections == []
+    assert wall.segment_path.lines[1].intersections == []

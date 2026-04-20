@@ -5,8 +5,8 @@ from tests.integration.test_utils import (
     assert_wall_lines,
     assert_segment_paths,
 )
-from tray.geometry.types.geometric import LineOrientation, PathOrientation
-from tray.geometry.types.tray import WallType, JointType
+from tray.geometry.types.geometric import LineOrientation, PathOrientation, PointLine
+from tray.geometry.types.tray import WallType, JointType, IntrxnType
 
 
 def test_center_to_center_logic():
@@ -185,6 +185,44 @@ def test_center_to_center_logic():
             WallType.INTERIOR,
             WallType.INTERIOR,
         ],
+        expected_intersections=[
+            [
+                ((3, 0), IntrxnType.CORNER_RT),
+                ((0, 0), IntrxnType.CORNER_LT),
+                ((1, 0), IntrxnType.TEE_T),
+            ],
+            [
+                ((3, 0), IntrxnType.CORNER_RT),
+                ((3, 2), IntrxnType.CORNER_RB),
+                ((3, 1), IntrxnType.TEE_R),
+            ],
+            [
+                ((3, 2), IntrxnType.CORNER_RB),
+                ((0, 2), IntrxnType.CORNER_LB),
+                ((1, 2), IntrxnType.TEE_B),
+                ((2, 2), IntrxnType.TEE_B),
+            ],
+            [
+                ((0, 0), IntrxnType.CORNER_LT),
+                ((0, 2), IntrxnType.CORNER_LB),
+                ((0, 1), IntrxnType.TEE_L),
+            ],
+            [
+                ((1, 0), IntrxnType.TEE_T),
+                ((1, 2), IntrxnType.TEE_B),
+                ((1, 1), IntrxnType.CROSS),
+            ],
+            [
+                ((3, 1), IntrxnType.TEE_R),
+                ((0, 1), IntrxnType.TEE_L),
+                ((1, 1), IntrxnType.CROSS),
+                ((2, 1), IntrxnType.TEE_T),
+            ],
+            [
+                ((2, 2), IntrxnType.TEE_B),
+                ((2, 1), IntrxnType.TEE_T),
+            ],
+        ],
     )
 
     # ################################################################################
@@ -229,5 +267,14 @@ def test_center_to_center_logic():
             [JointType.TS],
             [JointType.TS],
             [JointType.TS],
+        ],
+        expected_intersections=[
+            [[]],
+            [[]],
+            [[]],
+            [[]],
+            [[(PointLine.BETWEEN, (1, 1), IntrxnType.CROSS)]],
+            [[(PointLine.BETWEEN, (1, 1), IntrxnType.CROSS)]],
+            [[]],
         ],
     )

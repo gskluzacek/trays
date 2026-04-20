@@ -5,8 +5,8 @@ from tests.integration.test_utils import (
     assert_wall_lines,
     assert_segment_paths,
 )
-from tray.geometry.types.geometric import LineOrientation, PathOrientation
-from tray.geometry.types.tray import WallType, JointType
+from tray.geometry.types.geometric import LineOrientation, PathOrientation, PointLine
+from tray.geometry.types.tray import WallType, JointType, IntrxnType
 
 
 def test_main_1():
@@ -225,6 +225,39 @@ def test_main_1():
             WallType.INTERIOR,
             WallType.INTERIOR,
         ],
+        expected_intersections=[
+            [((2, 0), IntrxnType.CORNER_RT), ((0, 0), IntrxnType.CORNER_LT), ((1, 0), IntrxnType.TEE_T)],
+            [
+                ((2, 0), IntrxnType.CORNER_RT),
+                ((2, 4), IntrxnType.CORNER_LB),
+                ((2, 1), IntrxnType.TEE_R),
+                ((2, 3), IntrxnType.CROSS),
+            ],
+            [
+                ((4, 0), IntrxnType.CORNER_LT),
+                ((4, 4), IntrxnType.CORNER_RB),
+                ((4, 1), IntrxnType.TEE_L),
+                ((4, 3), IntrxnType.CROSS),
+            ],
+            [((4, 0), IntrxnType.CORNER_LT), ((6, 0), IntrxnType.CORNER_RT), ((5, 0), IntrxnType.TEE_T)],
+            [((6, 0), IntrxnType.CORNER_RT), ((6, 1), IntrxnType.TEE_R), ((6, 3), IntrxnType.TEE_R)],
+            [((2, 4), IntrxnType.CORNER_LB), ((4, 4), IntrxnType.CORNER_RB), ((3, 4), IntrxnType.TEE_B)],
+            [((0, 0), IntrxnType.CORNER_LT), ((0, 1), IntrxnType.TEE_L), ((0, 3), IntrxnType.TEE_L)],
+            [((2, 1), IntrxnType.TEE_R), ((0, 1), IntrxnType.TEE_L), ((1, 1), IntrxnType.CROSS)],
+            [((4, 1), IntrxnType.TEE_L), ((6, 1), IntrxnType.TEE_R), ((5, 1), IntrxnType.CROSS)],
+            [
+                ((2, 3), IntrxnType.CROSS),
+                ((4, 3), IntrxnType.CROSS),
+                ((6, 3), IntrxnType.TEE_R),
+                ((0, 3), IntrxnType.TEE_L),
+                ((1, 3), IntrxnType.TEE_B),
+                ((3, 3), IntrxnType.TEE_T),
+                ((5, 3), IntrxnType.TEE_B),
+            ],
+            [((1, 0), IntrxnType.TEE_T), ((1, 1), IntrxnType.CROSS), ((1, 3), IntrxnType.TEE_B)],
+            [((3, 4), IntrxnType.TEE_B), ((3, 3), IntrxnType.TEE_T)],
+            [((5, 0), IntrxnType.TEE_T), ((5, 1), IntrxnType.CROSS), ((5, 3), IntrxnType.TEE_B)],
+        ],
     )
 
     # ################################################################################
@@ -293,5 +326,20 @@ def test_main_1():
             [JointType.TS],
             [JointType.TS],
             [JointType.TS],
+        ],
+        expected_intersections=[
+            [[]],
+            [[], [(PointLine.BETWEEN, (2, 3), IntrxnType.CROSS)]],
+            [[(PointLine.BETWEEN, (4, 3), IntrxnType.CROSS)], []],
+            [[]],
+            [[]],
+            [[]],
+            [[]],
+            [[(PointLine.BETWEEN, (1, 1), IntrxnType.CROSS)]],
+            [[(PointLine.BETWEEN, (5, 1), IntrxnType.CROSS)]],
+            [[(PointLine.BETWEEN, (2, 3), IntrxnType.CROSS), (PointLine.BETWEEN, (4, 3), IntrxnType.CROSS)]],
+            [[(PointLine.BETWEEN, (1, 1), IntrxnType.CROSS)]],
+            [[]],
+            [[(PointLine.BETWEEN, (5, 1), IntrxnType.CROSS)]],
         ],
     )

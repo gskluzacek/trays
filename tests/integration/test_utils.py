@@ -1,6 +1,4 @@
 from tray.tray import Tray
-from tray.geometry.types.geometric import PathOrientation, LineOrientation
-from tray.geometry.types.tray import WallType, JointType
 from tray.geometry.base.base_path import BasePath
 from tray.geometry.final_base.final_base_path import FinalBasePath
 from tray.geometry.wall_line import WallLine
@@ -54,6 +52,7 @@ def create_tray(
     tray.classify_index_walls()
     tray.split_path_lines()
     tray.generate_walls_segments()
+    tray.generate_intersections()
 
     # here we call the functions that were written before the tray methods above for finalize_walls,
     # classify_index_walls, split_path_lines, and generate_walls_segments. not sure if we will move
@@ -109,7 +108,13 @@ def assert_final_base_path(
     assert line_orientations == expected_line_orientations
 
 
-def assert_wall_lines(wall_lines: list[WallLine], expected_coords, expected_orientations, expected_wall_types):
+def assert_wall_lines(
+    wall_lines: list[WallLine],
+    expected_coords,
+    expected_orientations,
+    expected_wall_types,
+    expected_intersections=None,
+):
     """
     validates a list of WallLine objects
     """
@@ -122,9 +127,20 @@ def assert_wall_lines(wall_lines: list[WallLine], expected_coords, expected_orie
     wall_types = [wall.wall_type for wall in wall_lines]
     assert wall_types == expected_wall_types
 
+    if expected_intersections is not None:
+        actual_intersections = [
+            [(intrxn.intrxn_pt.coords, intrxn.intrxn_type) for intrxn in wall.intersections] for wall in wall_lines
+        ]
+        assert actual_intersections == expected_intersections
+
 
 def assert_segment_paths(
-    wall_lines: list[WallLine], expected_points, expected_lines, expected_orientations, expected_joint_types
+    wall_lines: list[WallLine],
+    expected_points,
+    expected_lines,
+    expected_orientations,
+    expected_joint_types,
+    expected_intersections=None,
 ):
     """
     validates segment_paths of WallLine objects
@@ -150,3 +166,16 @@ def assert_segment_paths(
         # and append into a list of list of joint types.
         actual_joint_types.append([line.joint_type for line in wall.segment_path.lines])
     assert actual_joint_types == expected_joint_types
+
+    if expected_intersections is not None:
+        actual_intersections = []
+        for wall in wall_lines:
+            wall_line_intersections = []
+            for line in wall.segment_path.lines:
+                line_intersections = [
+                    (seg_intrxn.pt_chk, seg_intrxn.intrxn.intrxn_pt.coords, seg_intrxn.intrxn.intrxn_type)
+                    for seg_intrxn in line.intersections
+                ]
+                wall_line_intersections.append(line_intersections)
+            actual_intersections.append(wall_line_intersections)
+        assert actual_intersections == expected_intersections

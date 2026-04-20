@@ -5,6 +5,7 @@ from collections.abc import Iterator, Sequence
 from types import NotImplementedType
 from typing import Any, Generic, SupportsFloat, TypeVar
 from tray.geometry.basic.point import Point
+from tray.geometry.intersection import Intersection
 from tray.geometry.types.geometric import LineOrientation, PointLine
 from tray.geometry.types.tray import IntrxnType
 
@@ -129,7 +130,7 @@ class Line(Generic[T]):
             return PointLine.P2
         return PointLine.BETWEEN
 
-    def intersection_point(self, other: Line[T]) -> Point[T]:
+    def intersection_point(self, other: Line[int]) -> Point[int]:
         """
         Calculates the intersection point between two lines.
 
@@ -149,7 +150,7 @@ class Line(Generic[T]):
         horz_line, vert_line = self, other
         return Point(vert_line.p1.x, horz_line.p1.y)
 
-    def intersect(self, other) -> tuple[Point[T] | None, IntrxnType]:
+    def intersect(self, other) -> Intersection | None:
         """
         Determines the type of intersection between two geometric lines.
 
@@ -175,43 +176,43 @@ class Line(Generic[T]):
 
         # if the point is OUTSIDE both lines then it there is not an intersection
         if chk_horz == PointLine.OUTSIDE or chk_vert == PointLine.OUTSIDE:
-            return None, IntrxnType.NONE
+            return None
 
         # if the point is at the LEFT (P1) of the horizontal line
         elif chk_horz == PointLine.P1:
             # if the point is at the TOP (P1) of the vertical line
             if chk_vert == PointLine.P1:
-                return intrxn_pt, IntrxnType.CORNER_LT
+                return Intersection(intrxn_pt, IntrxnType.CORNER_LT)
             # if the point is at the BOTTOM (P2) of the vertical line
             elif chk_vert == PointLine.P2:
-                return intrxn_pt, IntrxnType.CORNER_LB
+                return Intersection(intrxn_pt, IntrxnType.CORNER_LB)
             # else the point is BETWEEN the vertical line's P1 & P2
             else:
-                return intrxn_pt, IntrxnType.TEE_L
+                return Intersection(intrxn_pt, IntrxnType.TEE_L)
 
         # if the point is on the RIGHT (P2) of the horizontal line
         elif chk_horz == PointLine.P2:
             # if the point is at the TOP (P1) of the vertical line
             if chk_vert == PointLine.P1:
-                return intrxn_pt, IntrxnType.CORNER_RT
+                return Intersection(intrxn_pt, IntrxnType.CORNER_RT)
             # if the point is at the BOTTOM (P2) of the vertical line
             elif chk_vert == PointLine.P2:
-                return intrxn_pt, IntrxnType.CORNER_RB
+                return Intersection(intrxn_pt, IntrxnType.CORNER_RB)
             # else the point is BETWEEN the vertical line's P1 & P2
             else:
-                return intrxn_pt, IntrxnType.TEE_R
+                return Intersection(intrxn_pt, IntrxnType.TEE_R)
 
         # else the point is BETWEEN the horizontal line's P1 & P2
         else:
             # if the point is at the TOP (P1) of the vertical line
             if chk_vert == PointLine.P1:
-                return intrxn_pt, IntrxnType.TEE_T
+                return Intersection(intrxn_pt, IntrxnType.TEE_T)
             # if the point is at the BOTTOM (P2) of the vertical line
             elif chk_vert == PointLine.P2:
-                return intrxn_pt, IntrxnType.TEE_B
+                return Intersection(intrxn_pt, IntrxnType.TEE_B)
             # else the point is BETWEEN the vertical line's P1 & P2
             else:
-                return intrxn_pt, IntrxnType.CROSS
+                return Intersection(intrxn_pt, IntrxnType.CROSS)
 
     def point_from_line(self, value: T) -> Point[T]:
         """

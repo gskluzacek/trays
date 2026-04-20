@@ -4,7 +4,7 @@ from tray.geometry.final_base.final_path_line import FinalPathLine
 from tray.geometry.basic.point import Point
 from tray.geometry.types.geometric import PathOrientation
 from tray.geometry.wall_line import WallLine
-from tray.geometry.types.tray import WallType, JointType
+from tray.geometry.types.tray import WallType, JointType, IntrxnType
 
 
 def test_tray_init():
@@ -674,3 +674,59 @@ def test_does_wall_line_start_first_bottom_right_to_top_left():
     path_line_v = FinalPathLine(Point(0.0, 0.2), Point(0.0, 0.8))
     # Returns (line1_p2.y > line2_p2.y) -> (1.0 > 0.8) -> True
     assert Tray._does_wall_line_start_first(wall_v, path_line_v) is True
+
+
+def test_generate_intersections_cross_updates_walls_and_segments():
+    tray = Tray(5.0, [100.0], [100.0])
+    wall_horz = WallLine(Point(0, 1), Point(2, 1))
+    wall_vert = WallLine(Point(1, 0), Point(1, 2))
+    tray.index_walls = [wall_horz, wall_vert]
+
+    wall_horz.segment_path.add_segment(Point(0, 1), Point(2, 1), JointType.TS)
+    wall_vert.segment_path.add_segment(Point(1, 0), Point(1, 2), JointType.TS)
+
+    tray.generate_intersections()
+
+    assert len(wall_horz.intersections) == 1
+    assert len(wall_vert.intersections) == 1
+
+    intrxn_h = wall_horz.intersections[0]
+    intrxn_v = wall_vert.intersections[0]
+    assert intrxn_h is intrxn_v
+    assert intrxn_h.intrxn_type == IntrxnType.CROSS
+    assert intrxn_h.intrxn_pt.coords == (1, 1)
+
+    assert len(wall_horz.segment_path.lines[0].intersections) == 1
+    assert len(wall_vert.segment_path.lines[0].intersections) == 1
+    assert wall_horz.segment_path.lines[0].intersections[0].intrxn is intrxn_h
+    assert wall_vert.segment_path.lines[0].intersections[0].intrxn is intrxn_h
+
+
+def test_generate_intersections_corner_does_not_update_segments():
+    tray = Tray(5.0, [100.0], [100.0])
+    wall_horz = WallLine(Point(0, 0), Point(2, 0))
+    wall_vert = WallLine(Point(0, 0), Point(0, 2))
+    tray.index_walls = [wall_horz, wall_vert]
+
+    wall_horz.segment_path.add_segment(Point(0, 0), Point(2, 0), JointType.TS)
+    wall_vert.segment_path.add_segment(Point(0, 0), Point(0, 2), JointType.TS)
+
+    tray.generate_intersections()
+
+    assert len(wall_horz.intersections) == 1
+    assert len(wall_vert.intersections) == 1
+    assert wall_horz.intersections[0].intrxn_type == IntrxnType.CORNER_LT
+    assert wall_horz.segment_path.lines[0].intersections == []
+    assert wall_vert.segment_path.lines[0].intersections == []
+
+
+def test_generate_intersections_no_intersection():
+    tray = Tray(5.0, [100.0], [100.0])
+    wall_horz = WallLine(Point(0, 0), Point(2, 0))
+    wall_vert = WallLine(Point(3, 1), Point(3, 2))
+    tray.index_walls = [wall_horz, wall_vert]
+
+    tray.generate_intersections()
+
+    assert wall_horz.intersections == []
+    assert wall_vert.intersections == []

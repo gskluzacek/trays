@@ -1,135 +1,139 @@
-# Tray - a Work In Progress
+# trays
 
-This is the Trays project...
+`trays` is a Python project for modeling compartment trays (for laser-cut builds) from indexed base paths and wall
+definitions.
 
-It was born because my wife asked for a new silverware draw TRAY and I had a laser cutter AND I was tiered of modeling
-in Fusin 360 everytime I wanted to change something.
+> Project status: work in progress.
 
-## Defining a tray is meant to be "simple"
+## Overview
 
-1. The first step is to define the overall parameters
-2. Then define the path of the base (most likely a rectangle)
-3. Then define the locations of the walls.
+The current codebase centers on the `Tray` model in `tray/tray.py`, where you:
 
-### Overall Parameters
+1. define material thickness and inside dimensions (columns/rows),
+2. define a base path using index coordinates,
+3. add interior/exterior walls,
+4. finalize geometry and generate wall/intersection data.
 
-For example (all measurements are in millimeters)
+Legacy notes in `README_old.md` explain the original modeling approach in detail; this README keeps the operational
+setup for the current repository state.
 
-* mat_thick=3,
-* fngr_len=20.0,
-* spc_len=10.0,
-* min_be_len=10.0,
-* col_widths=[50, 50, 50, 50, 100],
-* row_heights=[125, 50, 100],
-* min_tbslt_len=50,
-* max_tbslt_bt_xs=2,
-* wall_tbslt_dist=10,
-* depth=50,
+## Requirements
 
-The above says that I'm building the tray out of 3 mm material.
+- Python `>=3.13` (from `pyproject.toml`)
+- `uv` package manager / runner (project includes `uv.lock`)
 
-For the edge joints on the base, to use a finger length of 20 mm and a space length of 10. The minimum amount of space
-at the beginning and ending of an edge joint is 10 mm.
+Optional dev tools are managed through the `dev` dependency group:
 
-For joints on the interior of the base, the minimum tab/slot length is 50 mm with 2 tabs/slots between intersections.
-Tabs/slots should start 10 mm away from walls.
+- `pytest`
+- `coverage`
+- `ruff`
 
-The wall of the tray should be 50 mm tall.
+## Setup
 
-Finally, the tray will have 5 columns and 3 rows. With the columns having the following width: 50 mm, 50 mm, 50 mm, 50
-mm and 100 mm. And the rows will have a height of 125 mm, 50 mm and 100 mm.
+From the repository root:
 
-### Base Path
-
-Instead of defining the dimensions of base of the tray in terms of absolute lengths (i.e., in millimeters), you specify
-the path in terms column and row coordinates.
-
-For example, with the columns and row widths/heights given above, we would specify the path that forms the outline of
-the base as:
-
-start at point 0, 0 then draw a horizontal line to point 5,0 then draw a vertical line to point 5, 5, then a horizontal
-line to point 0, 5 and then finally close the path of the polygon.
-
-* base.start_path(0, 0)
-* base.extend_path(5, 0)
-* base.extend_path(5, 3)
-* base.extend_path(0, 3)
-* base.end_path()
-
-This lets us form a closed polygon of any shape to be as for the base.
-
-### Wall Locations
-
-The location for the walls of the tray is defined in a similar manner as the path for the base. The system automatically
-creates all exterior walls based on the path of the base so the user does not need to specify these.
-
-Continuing with our example above. We want 4 compartments that are 125 long and 50 mm wide. These 4 compartments start
-from the upper left and use 4 out of the 5 columns that we specified. The last remaining compartment along the top edge
-will be 275 mm long and 100 mm wide. We will use three vertical walls of 125 and one vertical wall of 275 mm to form
-these compartments.
-
-* base.add_wall((1, 0), (1, 1))
-* base.add_wall((2, 0), (2, 1))
-* base.add_wall((3, 0), (3, 1))
-* base.add_wall((4, 0), (4, 3))
-
-Next we will add our horizontal walls that will form the remaining 2 compartments. The first horizontal wall will be 200
-mm wide and will form the bottom wall of our four 50 mm x 125 mm compartments. The second horizontal wall will form our
-remaining 2 compartments. The upper one being 200 mm wide by 50 mm tall and the other being 200 mm wide and 100 mm tall.
-
-* base.add_wall((0, 1), (4, 1))
-* base.add_wall((0, 2), (4, 2))
-
-The resulting tray would look approximately something like this (I will upload the generated SVG image once I complete
-the program).
-
-```
-|--------|--------|--------|--------|----------------|
-|        |        |        |        |                |
-|        |        |        |        |                |
-|        |        |        |        |                |
-|        |        |        |        |                |
-|        |        |        |        |                |
-|        |        |        |        |                |
-|        |        |        |        |                |
-|        |        |        |        |                |
-|--------|--------|--------|--------|                |
-|                                   |                |
-|                                   |                |
-|                                   |                |
-|-----------------------------------|                |
-|                                   |                |
-|                                   |                |
-|                                   |                |
-|                                   |                |
-|                                   |                |
-|                                   |                |
-|-----------------------------------|----------------|
+```bash
+uv sync --group dev
 ```
 
-## Example from Version 0.1.0
+This installs the project environment with test/lint tooling.
 
-I've finally progressed the code to the point where it starting to be functional.
+## Run
 
-With the following code that configures the Tray's base panel and wall panels:
+Primary runnable entry point:
 
-<img width="300" src="https://user-images.githubusercontent.com/15515/160508753-4531186d-3d4f-41a7-bb91-e2df5d270f5f.jpg">
+- `main.py`
 
-This generates the the necessary SVG path commands to produce an SVG file:
+Run it with:
 
-<img width="600" src="https://user-images.githubusercontent.com/15515/160508832-253c86c3-8b8d-4616-b8e0-25c684873ddc.png">
+```bash
+uv run python main.py
+```
 
-[tray_inner_walls_4c](https://user-images.githubusercontent.com/15515/160509742-2167b712-9451-4a38-b630-d13d1f49b0f5.svg)
+There is also a legacy/prototype script at `main_5/main5.py`.
 
-Note, only the RAW M x y H x V y commands are generated at this time. Code to write out an actual SVG file is forth
-coming.
+```bash
+uv run python main_5/main5.py
+```
 
-Here is the resulting lazer cut tray cut from cardboard.
+## Scripts
 
-<img width="300" src="https://user-images.githubusercontent.com/15515/160508901-6d69c9d7-f34e-488c-ac06-a812d42c4be5.jpg">
+No packaged CLI scripts are currently declared in `pyproject.toml` (`[project.scripts]` is not defined).
 
-<img width="300" src="https://user-images.githubusercontent.com/15515/160508933-6e5a4321-07bd-4881-a093-77aa8e9dc244.jpg">
+Use direct `uv run python ...` commands for now.
 
-<img width="300" src="https://user-images.githubusercontent.com/15515/160508966-8d440a13-dae1-41c9-969f-662f141fcf01.jpg">
+- TODO: decide whether to expose an installable CLI entry point (for example `trays = ...`) and add it under
+  `[project.scripts]`.
 
-<img width="300" src="https://user-images.githubusercontent.com/15515/160508984-20a33420-6ba5-477b-b5aa-5c967a13c5ff.jpg">
+## Environment Variables
+
+No required runtime environment variables were found in the main project package (`tray/`) or test suite.
+
+- TODO: if future features require config via environment variables, document them here (`NAME`, required/optional,
+  default, example).
+
+## Tests
+
+The repository uses `pytest` and configures test discovery in `pyproject.toml`:
+
+- `testpaths = ["tests"]`
+
+Run all tests:
+
+```bash
+uv run pytest
+```
+
+Run unit tests only:
+
+```bash
+uv run pytest tests/unit
+```
+
+Run integration tests only:
+
+```bash
+uv run pytest tests/integration
+```
+
+Run coverage:
+
+```bash
+uv run coverage run -m pytest
+uv run coverage report -m
+```
+
+## Project Structure
+
+```text
+.
+├── main.py                     # Current primary runnable example
+├── pyproject.toml              # Project metadata, Python requirement, pytest/ruff config
+├── uv.lock                     # Locked dependency state for uv
+├── tray/
+│   ├── tray.py                 # Core Tray orchestration
+│   └── geometry/               # Geometry primitives, base/final/segment/intersection logic
+├── tests/
+│   ├── unit/                   # Unit tests
+│   └── integration/            # Integration tests
+├── README_old.md               # Historical README and early design narrative
+└── LICENSE
+```
+
+Note: `non_essential/` contains prototypes and exploratory assets that are not part of the core runtime path.
+
+## Legacy Modeling Notes (Condensed)
+
+The original project concept (documented in `README_old.md`) defines a tray in three steps:
+
+1. overall parameters (material thickness, dimensions, tab/finger settings),
+2. base polygon path in index-space coordinates,
+3. wall definitions in the same index-space.
+
+This conceptual model is still reflected in current APIs (`start_base`, `extend_base`, `end_base`, `add_wall`).
+
+## License
+
+This project is licensed under **The Unlicense** (public domain dedication).
+
+See `LICENSE` for the full text.

@@ -1,15 +1,19 @@
 from __future__ import annotations
 
+from tray.geometry.intersection import Intersection
+from tray.geometry.types.geometric import PointLine
 from tray.geometry.types.tray import WallType
 from tray.geometry.basic.line import Line, Point
 from tray.geometry.base.path_line import PathLine
 from tray.geometry.segment.segment_path import SegmentPath
+from tray.geometry.segment.segment_line import SegLnInterxn
 
 
 class WallLine(Line[int]):
     def __init__(self, p1: Point[int], p2: Point[int], wall_type: WallType = WallType.NONE) -> None:
         super().__init__(p1, p2)
         self.wall_type: WallType = wall_type
+        self.intersections: list[Intersection] = []
         self.segment_path: SegmentPath = SegmentPath()
 
     def __repr__(self) -> str:
@@ -54,3 +58,9 @@ class WallLine(Line[int]):
 
             case _:
                 raise ValueError("Unhandled collinear configuration")
+
+    def determine_segments_with_intrxn(self, intrxn: Intersection) -> None:
+        for line in self.segment_path.lines:
+            point_chk = line.check_point_on_line(intrxn.intrxn_pt)
+            if point_chk != PointLine.OUTSIDE:
+                line.intersections.append(SegLnInterxn(point_chk, intrxn))

@@ -182,6 +182,7 @@ def test_main_3():
         expected_coords=[((1, 1), (1, 4))],
         expected_orientations=[LineOrientation.VERT],
         expected_wall_types=[WallType.COMBO],
+        expected_intersections=[[]],
     )
 
     # ################################################################################
@@ -193,4 +194,5 @@ def test_main_3():
         expected_lines=[[((1, 1), (1, 2)), ((1, 2), (1, 3)), ((1, 3), (1, 4))]],
         expected_orientations=[LineOrientation.VERT],
         expected_joint_types=[[JointType.FS, JointType.TS, JointType.FS]],
+        expected_intersections=[[[], [], []]],
     )

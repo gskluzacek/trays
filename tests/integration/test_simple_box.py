@@ -1,5 +1,5 @@
 from tray.geometry.types.geometric import PathOrientation, LineOrientation
-from tray.geometry.types.tray import WallType, JointType
+from tray.geometry.types.tray import WallType, JointType, IntrxnType
 from tests.integration.test_utils import (
     create_tray,
     assert_base_path,
@@ -146,6 +146,24 @@ def test_simple_box():
             WallType.EXTERIOR,
             WallType.EXTERIOR,
         ],
+        expected_intersections=[
+            [
+                ((1, 0), IntrxnType.CORNER_RT),
+                ((0, 0), IntrxnType.CORNER_LT),
+            ],
+            [
+                ((1, 0), IntrxnType.CORNER_RT),
+                ((1, 1), IntrxnType.CORNER_RB),
+            ],
+            [
+                ((1, 1), IntrxnType.CORNER_RB),
+                ((0, 1), IntrxnType.CORNER_LB),
+            ],
+            [
+                ((0, 0), IntrxnType.CORNER_LT),
+                ((0, 1), IntrxnType.CORNER_LB),
+            ],
+        ],
     )
 
     # ################################################################################
@@ -177,5 +195,11 @@ def test_simple_box():
             [JointType.FS],
             [JointType.FS],
             [JointType.FS],
+        ],
+        expected_intersections=[
+            [[]],
+            [[]],
+            [[]],
+            [[]],
         ],
     )

@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from typing import TypeVar, SupportsFloat
-from itertools import combinations
+from itertools import combinations, product
 
 from cyclic_n_tuples import cyclic_n_tuples, fwd_pair
 from tray.geometry.final_base.final_path_line import FinalPathLine
 
-from tray.geometry.types.tray import WallType, JointType
+from tray.geometry.types.tray import WallType, JointType, IntrxnType
 from tray.geometry.types.geometric import LineOrientation
 from tray.geometry.basic.point import Point
 from tray.geometry.basic.line import Line
@@ -290,3 +290,27 @@ class Tray:
     def generate_walls_segments(self):
         self._generate_walls_segments(LineOrientation.HORZ)
         self._generate_walls_segments(LineOrientation.VERT)
+
+    def generate_intersections(self):
+        walls_horz = Line.of_orientation(self.index_walls, LineOrientation.HORZ)
+        walls_vert = Line.of_orientation(self.index_walls, LineOrientation.VERT)
+
+        # only walls need to know about corner and tee intersections
+        # walls (top) and segments need to know about cross intersections
+        # in other words walls need to know about all intersection types, but segements only
+        # need to know about cross intersections
+
+        # when a cross intersection is found between two walls, we have to find the corresponding segments
+        # the intersection can be in the middle of one segment or on the end points of two segments (P1 on
+        #   one and P2 on the other)
+
+        for wall_horz, wall_vert in product(walls_horz, walls_vert):
+            # print(f"checking intersection between: ({wall_horz.p1, wall_horz.p2}) and ({wall_vert.p1, wall_vert.p2})")
+            intrxn = wall_horz.intersect(wall_vert)
+            if intrxn:
+                print(f"    {intrxn}")
+                wall_horz.intersections.append(intrxn)
+                wall_vert.intersections.append(intrxn)
+                if intrxn.intrxn_type == IntrxnType.CROSS:
+                    wall_horz.determine_segments_with_intrxn(intrxn)
+                    wall_vert.determine_segments_with_intrxn(intrxn)

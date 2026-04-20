@@ -6,7 +6,7 @@ from tests.integration.test_utils import (
     assert_segment_paths,
 )
 from tray.geometry.types.geometric import LineOrientation, PathOrientation
-from tray.geometry.types.tray import WallType, JointType
+from tray.geometry.types.tray import WallType, JointType, IntrxnType
 
 
 def test_main_2():
@@ -185,6 +185,32 @@ def test_main_2():
             WallType.INTERIOR,
             WallType.INTERIOR,
         ],
+        expected_intersections=[
+            [
+                ((0, 0), IntrxnType.CORNER_LT),
+            ],
+            [],
+            [],
+            [
+                ((0, 0), IntrxnType.CORNER_LT),
+            ],
+            [
+                ((1, 1), IntrxnType.CORNER_LT),
+                ((3, 1), IntrxnType.CORNER_RT),
+            ],
+            [
+                ((1, 3), IntrxnType.CORNER_LB),
+                ((3, 3), IntrxnType.CORNER_RB),
+            ],
+            [
+                ((1, 1), IntrxnType.CORNER_LT),
+                ((1, 3), IntrxnType.CORNER_LB),
+            ],
+            [
+                ((3, 1), IntrxnType.CORNER_RT),
+                ((3, 3), IntrxnType.CORNER_RB),
+            ],
+        ],
     )
 
     # ################################################################################
@@ -233,5 +259,15 @@ def test_main_2():
             [JointType.TS],
             [JointType.TS],
             [JointType.TS],
+        ],
+        expected_intersections=[
+            [[]],
+            [[]],
+            [[]],
+            [[]],
+            [[]],
+            [[]],
+            [[]],
+            [[]],
         ],
     )

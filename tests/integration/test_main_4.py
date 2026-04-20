@@ -314,6 +314,10 @@ def test_main_4():
             WallType.COMBO,
             WallType.COMBO,
         ],
+        expected_intersections=[
+            [],
+            [],
+        ],
     )
 
     # ################################################################################
@@ -336,5 +340,9 @@ def test_main_4():
         expected_joint_types=[
             [JointType.FS, JointType.TS, JointType.FS, JointType.TS, JointType.FS],
             [JointType.FS, JointType.TS, JointType.FS, JointType.TS, JointType.FS],
+        ],
+        expected_intersections=[
+            [[], [], [], [], []],
+            [[], [], [], [], []],
         ],
     )
