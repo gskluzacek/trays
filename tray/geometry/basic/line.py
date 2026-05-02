@@ -112,6 +112,9 @@ class Line(Generic[T]):
         horizontal or vertical and utilizes the coordinates of the point and
         the segment's boundary.
 
+        note: this method treats the line as a 1D line segment, so it only checks the coordinate that is
+        relevant to the line's orientation (x for horizontal, y for vertical).
+
         :param pt: The point to evaluate.
         :type pt: Point[T]
         :return: A value from the PointLine enumeration representing the

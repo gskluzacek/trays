@@ -308,7 +308,7 @@ class Tray:
             # print(f"checking intersection between: ({wall_horz.p1, wall_horz.p2}) and ({wall_vert.p1, wall_vert.p2})")
             intrxn = wall_horz.intersect(wall_vert)
             if intrxn:
-                print(f"    {intrxn}")
+                # print(f"    {intrxn}")
                 wall_horz.intersections.append(intrxn)
                 wall_vert.intersections.append(intrxn)
                 if intrxn.intrxn_type == IntrxnType.CROSS:
