@@ -252,15 +252,33 @@ class Tray:
         return (line1_p1.y < line2_p1.y) if line1.p1 < line1.p2 else (line1_p2.y > line2_p2.y)
 
     def _generate_wall_segments(self, wall: WallLine):
+        """
+        Generates individual wall segments for a given wall line by identifying intersections with the final base paths.
+
+        This method determines the points where the wall overlaps with final base path lines, sorts them 
+        based on the wall's direction, and populates the wall's segment path with alternating 
+        Tab-Slot (TS) and Flat-Slot (FS) segments. The starting joint type is determined by the wall 
+        classification and its position relative to the first overlapping path line.
+
+        :param wall: The wall line to process.
+        :type wall: WallLine
+        """
+        # segment_points is a list of SegmentPoints which is like a normal Point object, but allows us
+        # to refer back to the origianl final path line that the point is from
         segment_points: list[SegmentPoint] = []
+
+        # for each Final Base Path object in the Tray's final_index_paths list
         for path in self.final_index_paths:
+            # get and iterate over the finel path lines with the saem oreientation as the wall
             path_lines = path.horizontal if wall.is_horizontal else path.vertical
 
             for path_line in path_lines:
                 # note is_overlapping already checks if the lines are collinear, so no need to check here
                 if path_line.is_overlapping(wall):
-                    # we check both P1 and P2 of path_line to see if they are between wall's points
-                    # points_from_line - calls normalize on the points (probably not necessary as we sort the segment points)
+                    # the points_from_line call normalize on the final path line's points before returning its results
+
+                    # only keep the end points (P1 and/or P2) of the final path line if the point is strictly
+                    # between wall's end points.
                     segment_points.extend([pt for pt in path_line.points_from_line if pt.is_between(wall)])
 
         # we reverse the order of the sort if the wall line is bottom/right to top/left versus top/left to bottom/right
@@ -284,10 +302,21 @@ class Tray:
             wall.segment_path.add_segment(p1, p2, joint_type)
 
     def _generate_walls_segments(self, orientation: LineOrientation):
+        """
+        Generates wall segments for all index walls of the specified orientation.
+
+        :param orientation: The orientation of walls to process (HORZ or VERT).
+        :type orientation: LineOrientation
+        """
         for wall in Line.of_orientation(self.index_walls, orientation):
             self._generate_wall_segments(wall)
 
     def generate_walls_segments(self):
+        """
+        Orchestrates the generation of wall segments for all horizontal and vertical index walls.
+
+        This method processes horizontal walls first, followed by vertical walls.
+        """
         self._generate_walls_segments(LineOrientation.HORZ)
         self._generate_walls_segments(LineOrientation.VERT)
 

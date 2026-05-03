@@ -64,3 +64,4 @@ class WallLine(Line[int]):
             point_chk = line.check_point_on_line(intrxn.intrxn_pt)
             if point_chk != PointLine.OUTSIDE:
                 line.intersections.append(SegLnInterxn(point_chk, intrxn))
+                # do not break out of the for loop as the point can fall on an endpoint of multiple lines

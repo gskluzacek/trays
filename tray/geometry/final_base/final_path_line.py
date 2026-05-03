@@ -19,5 +19,19 @@ class FinalPathLine(Line[int]):
 
     @property
     def points_from_line(self) -> tuple[SegmentPoint, SegmentPoint]:
+        """
+        Returns the final path line's two corresponding segment points.
+
+        The points are derived from the normalized segment points associated with the
+        final path line. The normalization ensures the points maintain consistent
+        representation regardless of the original sequence of input endpoints.
+
+        The SegmentPoint objects returned not only include the stareting and ending points of the
+        original final path line, but also include a reference to the FinalPathLine they belong to,
+
+        :return: A tuple containing two `SegmentPoint` objects representing the
+                 segment points of the line.
+        :rtype: tuple[SegmentPoint, SegmentPoint]
+        """
         sl_pt_1, sl_pt_2 = self.normalize
         return SegmentPoint(sl_pt_1.x, sl_pt_1.y, self), SegmentPoint(sl_pt_2.x, sl_pt_2.y, self)

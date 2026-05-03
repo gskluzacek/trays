@@ -2,6 +2,11 @@
 
 This file is a compact index for AI-assisted work in this repository.
 
+## Session Startup Requirement
+
+- When starting a new chat, first review [`./.junie/AGENTS.md`](./.junie/AGENTS.md).
+- Treat `.junie/AGENTS.md` as the session-specific instruction source before using this root guide.
+
 ## Instruction Topics
 
 - [Code Q&A Instructions](./code_questions_instructions.md)

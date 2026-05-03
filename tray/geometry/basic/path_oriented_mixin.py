@@ -53,9 +53,8 @@ class PathOrientationMixin:
                 "could not determine the path's orientation (clockwise or counter clockwise). please check that all points in the path are not collinear"
             )
 
-        # This part should be logically unreachable given the checks above,
-        # but kept as a safety measure.
         if orientation == PathOrientation.NONE:  # pragma: no cover
+            # This condition should be logically imposible given the checks above, but we are keeping it as a safety measure.
             raise ValueError("exhausted path without determining the orientation")
 
         self.orientation = orientation

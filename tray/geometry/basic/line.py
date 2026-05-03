@@ -262,19 +262,20 @@ class Line(Generic[T]):
     @staticmethod
     def _intervals_overlap(line_1: Line[T], line_2: Line[T]) -> bool:
         """
-        Determines if two line intervals overlap based on their alignment (vertical or
-        horizontal). This method is designed to operate based on the principle that
-        overlapping intervals must share a common range in one dimensional space
-        (either in x-axis or y-axis depending on their alignment).
+        Determines if two line intervals (with the same orientation: horizontal or vertical)
+        overlap based. This method is designed to operate based on the principle that overlapping
+        intervals must share a common range in one dimensional space (in the x-axis for horizontal
+        lines or in the y-axis vertical lines).
 
-        NOTE: sharing a single point is not considered overlapping.
+        PREREQUISITE: the lines must have the same orientation AND be collinear.
+
+        NOTE: sharing a single point is not considered overlapping. It is considered touching.
 
         :param line_1: The first line segment being compared.
         :type line_1: Line[T]
         :param line_2: The second line segment being compared.
         :type line_2: Line[T]
-        :return: True if the two lines overlap in their respective alignment,
-            otherwise False.
+        :return: True if the two lines overlap otherwise False.
         :rtype: bool
         """
         if line_1.is_vertical:
@@ -302,19 +303,31 @@ class Line(Generic[T]):
         return self._intervals_overlap(line_1, line_2)
 
     def is_collinear(self, other: Line[T]) -> bool:
-        # vertical use case first
+        """
+        Checks if two lines are collinear.
+
+        to check if the lines are collinear, they must have the same orientation (both
+        vertical or both horizontal). If they are vertical, then the x coordinates must be
+        equal. If they are horizontal, then the y coordinates must be equal. If one line
+        is vertical and the other is horizontal, then they cannot be collinear.
+
+        :param other: The other line to compare with.
+        :type other: Line[T]
+        :return: True if lines are collinear, otherwise False.
+        :rtype: bool
+        """
         if self.is_vertical:
-            # both lines must be vertical
+            # if both lines are vertical (vertical use case first)
             if other.is_vertical:
                 # if x coords are equal then lines are collinear
                 return self.p1.x == other.p1.x
             raise ValueError("cannot compare vertical lines with non-vertical lines")
-        # horizontal use case second
-        # both lines must be horizontal
-        if other.is_vertical:
-            raise ValueError("cannot compare non-vertical lines with vertical lines")
-        # if y coords are equal then lines are collinear
-        return self.p1.y == other.p1.y
+
+        # if both lines are horizontal (horizontal use case second )
+        if other.is_horizontal:
+            # if y coords are equal then lines are collinear
+            return self.p1.y == other.p1.y
+        raise ValueError("cannot compare non-vertical lines with vertical lines")
 
     @functools.cached_property
     def normalize(self) -> tuple[Point[T], Point[T]]:
